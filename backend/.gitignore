@@ -21,6 +21,7 @@ pnpm-debug.log*
 prisma/dev.db
 prisma/dev.db-journal
 prisma/migrations/**/migration_lock.toml
+/src/generated/prisma-client
 
 # =========================
 # Build outputs
