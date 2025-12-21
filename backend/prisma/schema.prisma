@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+ 
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String      @id @default(uuid())
+  username      String      @unique
+  email         String      @unique
+  passwordHash  String
+  createdAt     DateTime    @default(now())
+
+  stories       Story[]
+  turns         Turn[]
+  comments      Comment[]
+  upvotes       TurnUpvotes[]
+}
+
+model Story {
+  id            String      @id @default(uuid())
+  userId        String      
+  title         String
+  content       String
+  isLocked      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id])
+  turns         Turn[]
+  comments      Comment[]
+
+  @@index([createdAt])
+}
+
+model Character {
+  id             Int          @id @default(autoincrement())
+  name           String       @unique
+
+  turns          Turn[]
+}
+
+model Turn {
+  id            String        @id @default(uuid())
+  storyId       String
+  userId        String
+  characterId   Int    
+  content       String
+  createdAt     DateTime      @default(now())
+
+  story         Story         @relation(fields: [storyId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  character     Character     @relation(fields: [characterId], references: [id])
+  upvotes       TurnUpvote[]
+
+  @@index([storyId, createdAt])
+}
+
+model TurnUpvote {
+  id              String      @id @default(uuid())
+  turnId          String
+  userId          String
+  createdAt       DateTime    @default(now())
+
+  turn            Turn        @relation(fields: [turnId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
+
+  @@index([turnId, userId])
+}
+
+model Comment {
+  id              String      @id @default(uuid())
+  storyId         String
+  userId          String
+  content         String
+  createdAt       DateTime    @default(now())
+
+  story           Story       @relation(fields: [storyId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
+
+  @@index([storyId, createdAt])
+}
