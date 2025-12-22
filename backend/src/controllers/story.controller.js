@@ -8,15 +8,23 @@ export async function create(req, res) {
         const maxChar = 50
         const maxCont = 150
 
-        if (title > maxChar) {
+        if (!title || title.trim().length === 0) {
+            throw new Error("Title cant be empty")
+        }
+
+        if (!content || content.trim().length === 0) {
+            throw new Error("Content cant be empty")
+        }
+
+        if (title.length > maxChar) {
             throw new Error("Title cannot be more than 50 characters")
         }
 
-        if ( content > maxCont) {
+        if ( content.length > maxCont) {
             throw new Error("You've passed the numbers of characters alllowed.")
         }
 
-        const story = await createStory(userId, title, content);
+        const story = await createStory(userId, {title, content});
         res.status(201).json(story)
     } catch ( err ) {
         res.status(400).json({ error: err.message })
