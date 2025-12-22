@@ -5,7 +5,7 @@ import commentRoutes from './routes/comment.routes'
 import storyRoutes from './routes/story.routes'
 import turnRoues from './routes/turn.routes'
 import upvoteRoutes from './routes/upvote.routes'
-
+import authRoutes from './routes/auth.routes'
 
 dotenv.config();
 
@@ -19,7 +19,7 @@ app.use(
   cors()
 );
 
-app.use("/", user(prisma));
+app.use("/api/auth", authRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api", turnRoues);
 app.use("/api", commentRoutes);
