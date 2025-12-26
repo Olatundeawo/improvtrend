@@ -1,4 +1,4 @@
-import { toggleUpvote } from "../services/upvote.service";
+import { toggleUpvote } from "../services/upvote.service.js";
 
 export async function upvoteTurn(req, res) {
     try {

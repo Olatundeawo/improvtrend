@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
-import prisma from "../prisma/client";
+import prisma from "../prisma/client.js";
 
 
 export async function registerUser ({ username, email, password }) {
@@ -10,19 +10,21 @@ export async function registerUser ({ username, email, password }) {
         }
     })
 
-    const usernameExist = await prisma.user.findFirst ({
-        where: {
-            username
-        }
-    })
-
     if (emailExist) {
         throw new Error("Email already used")
     }
 
+    const usernameExist= await prisma.user.findFirst ({
+        where: {
+            username
+        }
+    });
+
+
     if (usernameExist) {
         throw new Error("choose a different username, username already picked.")
     }
+    console.log("This is the passord", password)
 
     const  passwordHash = await bcrypt.hash(password, 10);
 
@@ -37,10 +39,10 @@ export async function registerUser ({ username, email, password }) {
     return user
 }
 
-export async function loginUser({email, password}) {
-    const user = await prisma.user.findUnique({
+export async function loginUser({email, username, password}) {
+    const user = await prisma.user.findFirst({
         where: {
-            OR: [{email}, {usernameExist}]
+            OR: [{email: email || undefined}, {username: username || undefined}]
         }
     })
 

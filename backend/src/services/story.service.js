@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client";
+import prisma from "../prisma/client.js";
 
 export async function createStory(userId, { title, content}) {
     return prisma.story.create({

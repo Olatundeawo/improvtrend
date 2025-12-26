@@ -1,4 +1,4 @@
-import { addTurn } from "../services/turn.service";
+import { addTurn } from "../services/turn.service.js";
 
 export async function continueStory( req, res) {
     try {

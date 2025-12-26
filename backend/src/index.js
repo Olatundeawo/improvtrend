@@ -1,11 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import commentRoutes from './routes/comment.routes'
-import storyRoutes from './routes/story.routes'
-import turnRoues from './routes/turn.routes'
-import upvoteRoutes from './routes/upvote.routes'
-import authRoutes from './routes/auth.routes'
+import commentRoutes from './routes/comment.routes.js'
+import storyRoutes from './routes/story.routes.js'
+import turnRoues from './routes/turn.routes.js'
+import upvoteRoutes from './routes/upvote.routes.js'
+import authRoutes from './routes/auth.routes.js'
 
 dotenv.config();
 
@@ -13,7 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-
+app.use((req, res, next) => {
+  console.log("METHOD:", req.method);
+  console.log("CONTENT-TYPE:", req.headers["content-type"]);
+  console.log("RAW BODY:", req.body);
+  next();
+});
 
 app.use(
   cors()
@@ -28,7 +33,7 @@ app.use("/api", upvoteRoutes);
 
 app.use((req, res) => {
     res.status(404).json({
-        error: "Route not found"
+        error: "Route not found, enter a valid route"
     })
 })
 

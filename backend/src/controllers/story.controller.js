@@ -1,4 +1,4 @@
-import { createStory, getStories, getStoryById } from "../services/story.service";
+import { createStory, getStories, getStoryById } from "../services/story.service.js";
 
 
 export async function create(req, res) {
@@ -33,7 +33,7 @@ export async function create(req, res) {
 
 export async function get(req, res) {
     try {
-        const id = req.params
+        const {id} = req.params
 
         const getStory = await getStoryById(id);
         res.status(201).json(getStory)

@@ -1,5 +1,6 @@
 import express from "express"
-import { continueStory } from "../controllers/turn.controller"
+import { continueStory } from "../controllers/turn.controller.js"
+import auth from "../middleware/auth.js";
 
 
 

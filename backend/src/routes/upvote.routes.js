@@ -1,5 +1,6 @@
 import express from "express"
-import { upvoteTurn } from "../controllers/upvote.controller"
+import { upvoteTurn } from "../controllers/upvote.controller.js"
+import auth from "../middleware/auth.js";
 
 const router = express.Router()
 

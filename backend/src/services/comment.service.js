@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client.js";
+import prisma from "../prisma/client.js";
 
 export async function addComment(storyId, userId, { content }) {
   if (!content || content.trim().length === 0) {

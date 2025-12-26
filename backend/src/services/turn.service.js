@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client";
+import prisma from "../prisma/client.js";
 
 export async function addTurn(storyId, userId, characterId, content) {
     const story = await prisma.story.findUnique({

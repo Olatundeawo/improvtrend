@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client";
+import prisma from "../prisma/client.js";
 
 export async function toggleUpvote(turnId, userId) {
     const existing = await prisma.turnUpvote.findUnique({
