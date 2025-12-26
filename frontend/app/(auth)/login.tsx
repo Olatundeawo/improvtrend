@@ -76,6 +76,7 @@ function login() {
             placeholderTextColor="#999"
             value={form.password}
             onChangeText={(text) => handleChanges("password", text)}  
+            secureTextEntry
             />
         </View>
 
