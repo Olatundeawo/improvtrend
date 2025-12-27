@@ -51,10 +51,10 @@ export default function Login() {
     const isEmail = form.identifier.includes("@")
     
     const payload = {
-      password: form.password,
+      password: form.password.trim(),
       ...(isEmail ? {
-        email: form.identifier
-      }: {username: form.identifier})
+        email: form.identifier.trim()
+      }: {username: form.identifier.trim()})
     }
     
     try {
