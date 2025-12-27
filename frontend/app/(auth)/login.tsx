@@ -19,6 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState<boolean>(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
   
   type Form = {
@@ -51,9 +52,9 @@ export default function Login() {
     const isEmail = form.identifier.includes("@")
     
     const payload = {
-      password: form.password.trim(),
+      password: form.password,
       ...(isEmail ? {
-        email: form.identifier.trim()
+        email: form.identifier.trim().toLowerCase()
       }: {username: form.identifier.trim()})
     }
     
@@ -127,13 +128,25 @@ export default function Login() {
 
         <View style={styles.field}>
           <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordContainer}>
           <TextInput
             value={form.password}
             onChangeText={(text) => handleChanges("password", text)}
-            placeholder="••••••••"
-            secureTextEntry
-            style={styles.input}
+            placeholder="•••"
+            secureTextEntry= {!showPassword}
+            style={[styles.input, {flex: 1}]}
           />
+          <TouchableOpacity 
+          onPress={() => setShowPassword(!showPassword)}
+          style={styles.showButton}>
+
+            <Text style={styles.showButtonText}>
+              {showPassword ? "Hide" : "Show"}
+            </Text>
+
+          </TouchableOpacity>
+
+          </View>
         </View>
 
         <TouchableOpacity
@@ -258,6 +271,29 @@ const styles = StyleSheet.create({
     color: "#2563eb",
     fontSize: 14,
     fontWeight: "500",
+  },
+
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 0,
+    backgroundColor: "#ffffff",
+  },
+  
+  showButton: {
+    paddingHorizontal: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
+  showButtonText: {
+    color: "#2563eb",
+    fontWeight: "500",
+    fontSize: 14,
   },
 
   successBox: {

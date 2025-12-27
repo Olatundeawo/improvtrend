@@ -14,16 +14,20 @@ export default function Register() {
     email: "",
     username: "",
     password: "",
+    comfirmPassword:""
   });
   const [loading, setLoading] = useState<boolean>(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   type Form = {
     email: string;
     username: string;
     password: string;
+    comfirmPassword: string;
   };
 
   const handleChange = <K extends keyof Form>(
@@ -43,15 +47,22 @@ export default function Register() {
     setMessage(null)
     setError(null)
     
-    if (!form.email || !form.password || !form.username) {
+    if (!form.email.trim().toLowerCase() || !form.password || !form.username.trim()) {
         setError("Fill all fields")
         setLoading(false)
         return
     }
+
+    if(form.password !== form.comfirmPassword){
+        setError("Passowrd doesn't match")
+        setLoading(false)
+        
+        return
+    }
     const payload = {
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         username: form.username.trim(),
-        password:form.password.trim()
+        password:form.password
     }
     try {
       const response = await axios.post(`${URL}auth/register/`, payload);
@@ -63,6 +74,7 @@ export default function Register() {
         email: "",
         username: "",
         password: "",
+        comfirmPassword: ""
       });
     } catch (error: any) {
       if (error.response) {
@@ -141,16 +153,52 @@ export default function Register() {
 
         <View style={styles.field}>
           <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput
+                placeholder="Create a strong password"
+                placeholderTextColor="#94a3b8"
+                value={form.password}
+                onChangeText={(text) =>
+                handleChange("password", text)
+                }
+                secureTextEntry={!showPassword}
+                style={[styles.input, {flex: 1}]}
+            />
+            <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.showButton}
+            >
+                <Text style={styles.showButtonText}>
+                    {showPassword ? "Hide" : "Show"}
+                </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Comfirm Password</Text>
+          <View style={styles.passwordContainer}>
+
           <TextInput
-            placeholder="Create a strong password"
+            placeholder="Retype password"
             placeholderTextColor="#94a3b8"
-            value={form.password}
+            value={form.comfirmPassword}
             onChangeText={(text) =>
-              handleChange("password", text)
+              handleChange("comfirmPassword", text)
             }
-            secureTextEntry
-            style={styles.input}
+            secureTextEntry={!showConfirmPassword}
+            style={[styles.input]}
           />
+          <TouchableOpacity
+          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          style={styles.showButton}
+          >
+            <Text style={styles.showButtonText}>
+                {showConfirmPassword ? "Hide": "Show"}
+            </Text>
+          </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -279,6 +327,29 @@ const styles = StyleSheet.create({
       borderRadius: 12,
     },
   
+    passwordContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 0,
+        backgroundColor: "#ffffff",
+      },
+      
+      showButton: {
+        paddingHorizontal: 10,
+        justifyContent: "center",
+        alignItems: "center",
+      },
+      
+      showButtonText: {
+        color: "#2563eb",
+        fontWeight: "500",
+        fontSize: 14,
+      },
+      
     buttonText: {
       color: "#ffffff",
       fontSize: 16,
