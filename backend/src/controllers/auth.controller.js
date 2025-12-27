@@ -12,7 +12,7 @@ export async function register(req, res) {
 
     if (!username || !email || !password) {
       return res.status(400).json({
-        error: "username, email, and passwordHash are required"
+        error: "username, email, and password are required"
       });
     }
 
@@ -24,6 +24,12 @@ export async function register(req, res) {
     });
 
   } catch (err) {
+    if (
+      err.message === "choose a different username, username already picked." ||
+      err.message === "Email already used"
+    ) {
+     return res.status(409).json({ error: err.message})
+    }
     res.status(400).json({ error: err.message });
   }
 }
@@ -41,7 +47,7 @@ export async function login(req, res) {
 
     if ((!username && !email) || !password) {
       return res.status(400).json({
-        error: "username, email, and passwordHash are required"
+        error: "username, email, and password are required"
       });
     }
     const result = await loginUser({username, email, password});
