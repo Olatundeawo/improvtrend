@@ -3,11 +3,11 @@ import axios from "axios";
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
+  ActivityIndicator, StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 
@@ -16,7 +16,7 @@ export default function Login() {
     identifier: "",
     password: "",
   });
-  
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
   
@@ -37,9 +37,12 @@ export default function Login() {
   
   const submit = async () => {
     if (!URL) return;
-    
+    if (loading) return
+    setLoading(true)
+    setError(null)
     if(!form.identifier || !form.password) {
-      console.log("Missing Credential")
+      setError("Missing Credential")
+      setLoading(false)
       return;
     }
     
@@ -66,7 +69,11 @@ export default function Login() {
     } catch (error: any) {
       if (error.response) {
         setError(error.response?.data?.error || "Network error, try again");
-      } 
+      } else {
+        setError("Check your internet connection.")
+      }
+    } finally{
+      setLoading(false)
     }
   };
 
@@ -117,9 +124,17 @@ export default function Login() {
         <TouchableOpacity
           onPress={submit}
           activeOpacity={0.8}
-          style={styles.button}
+          style={[styles.button,
+            loading && styles.buttonDisabled
+          ]}
+          disabled={loading}
         >
+          {loading ? (
+            <ActivityIndicator color="#ffffff" />
+          ): (
+
           <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
@@ -207,6 +222,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+  },
+
+  buttonDisabled: {
+    opacity: 0.7,
   },
 
   footer: {
