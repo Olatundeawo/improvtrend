@@ -31,9 +31,28 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const result = await loginUser(req.body);
+    if (!req.body) {
+      return res.status(400).json({
+        error: "Request body is missing or invalid JSON"
+      });
+    }
+
+    const { username, email, password } = req.body;
+
+    if ((!username && !email) || !password) {
+      return res.status(400).json({
+        error: "username, email, and passwordHash are required"
+      });
+    }
+    const result = await loginUser({username, email, password});
     res.json(result);
   } catch (err) {
+    if (
+    err.message === "Invalid credentials" ||
+    err.message === "Password mismatch"
+  ) {
+    return res.status(401).json({ error: err.message });
+  }
     res.status(400).json({ error: err.message });
   }
 }
