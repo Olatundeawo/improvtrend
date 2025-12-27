@@ -3,7 +3,9 @@ import axios from "axios";
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator, StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform, StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -96,6 +98,13 @@ export default function Login() {
   }, [error, message])
 
   return (
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "android" ? 50 : 0}
+    
+  >
+    
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Welcome back</Text>
@@ -175,6 +184,7 @@ export default function Login() {
         </View>
       </View>
     </View>
+  </KeyboardAvoidingView>
   );
 }
 

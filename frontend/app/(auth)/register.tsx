@@ -2,7 +2,9 @@ import axios from "axios";
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator, StyleSheet,
+    ActivityIndicator, KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -101,6 +103,11 @@ export default function Register() {
   }, [error, message]);
 
   return (
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Create an account</Text>
@@ -176,6 +183,7 @@ export default function Register() {
           </View>
         </View>
 
+        
         <View style={styles.field}>
           <Text style={styles.label}>Comfirm Password</Text>
           <View style={styles.passwordContainer}>
@@ -188,7 +196,7 @@ export default function Register() {
               handleChange("comfirmPassword", text)
             }
             secureTextEntry={!showConfirmPassword}
-            style={[styles.input]}
+            style={[styles.input, {flex: 1}]}
           />
           <TouchableOpacity
           onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -226,6 +234,7 @@ export default function Register() {
         </View>
       </View>
     </View>
+  </KeyboardAvoidingView>
   );
 }
 
