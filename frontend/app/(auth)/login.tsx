@@ -1,92 +1,243 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import axios from 'axios'
-import React, { useState } from 'react'
-import { Text, TextInput, TouchableOpacity, View } from 'react-native'
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-function login() {
-    const [form, setForm] = useState({
-        email: "",
-        password: ""
-    })
-    const [data, setData] = useState([])
 
-    const URL = process.env.EXPO_PUBLIC_BASE_URL
-
-    type Form = {
-        email: string;
-        password: string;
+export default function Login() {
+  const [form, setForm] = useState({
+    identifier: "",
+    password: "",
+  });
+  
+  const [error, setError] = useState<string | null>(null)
+  const URL = process.env.EXPO_PUBLIC_BASE_URL;
+  
+  type Form = {
+    identifier: string;
+    password: string;
+  };
+  
+  const handleChanges = <K extends keyof Form>(
+    field: K,
+    value: Form[K]
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+  
+  const submit = async () => {
+    if (!URL) return;
+    
+    if(!form.identifier || !form.password) {
+      console.log("Missing Credential")
+      return;
     }
-
-    const handleChanges = <K extends keyof Form>(field: K, value: Form[K]) => {
-        setForm(prev => ({
-            ...prev, [field]: value
-        }))
+    
+    const isEmail = form.identifier.includes("@")
+    
+    const payload = {
+      password: form.password,
+      ...(isEmail ? {
+        email: form.identifier
+      }: {username: form.identifier})
     }
+    
+    try {
+      const response = await axios.post(`${URL}auth/login/`, payload);
+      
+      if (response.status !== 200) return;
+      
+      if (response.data?.token) {
+        await AsyncStorage.setItem("token", response.data.token);
+      }
+      
+      setForm({ identifier: "", password: "" });
+      console.log("data: ", response.data)
+    } catch (error: any) {
+      if (error.response) {
+        setError(error.response?.data?.error || "Network error, try again");
+      } 
+    }
+  };
 
-    const submit = async () => {
+  useEffect(()=> {
+    if (!error) return
+    const clear = setTimeout(()=> {
+      setError(null)
+    }, 5000);
 
-        const postData = {
-            email: form.email,
-            password: form.password
-        }
+    return () => clearInterval(clear)
+  }, [error])
 
-        try {
-            const response = await axios.post(`${URL}auth/login/`, postData);
-            console.log(response.data)
-
-            if (!response.data.ok) {
-                console.log(response.data.error)
-                return;
-            }
-
-
-            setData(response.data)
-            setForm({
-                email:"",
-                password:""
-            })
-            await AsyncStorage.setItem('token', response.data.token)
-
-        } catch (error) {
-            console.log(error)
-        }
-
-    } 
   return (
-    <View>
-        <Text> This is login page.</Text>
-        <View>
-            <Text>
-                Email
-            </Text>
-            <TextInput
-            placeholder='Enter your email or username'
-            placeholderTextColor="#999"
-            value={form.email}
-            onChangeText={(text) => handleChanges("email", text)}
-            keyboardType='email-address'
-            />
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Welcome back</Text>
+        <Text style={styles.subtitle}>Log in to your account</Text>
+
+          {error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            value={form.identifier}
+            onChangeText={(text) => handleChanges("identifier", text)}
+            placeholder="you@example.com or username"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.input}
+          />
         </View>
-        <View>
-            <Text>
-                Password
-            </Text>
-            <TextInput
-            placeholder='enter your password'
-            placeholderTextColor="#999"
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
             value={form.password}
-            onChangeText={(text) => handleChanges("password", text)}  
+            onChangeText={(text) => handleChanges("password", text)}
+            placeholder="••••••••"
             secureTextEntry
-            />
+            style={styles.input}
+          />
         </View>
 
         <TouchableOpacity
-        onPress={submit}
-        > 
-        Login
+          onPress={submit}
+          activeOpacity={0.8}
+          style={styles.button}
+        >
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Don’t have an account?
+          </Text>
+          <Link href="(auth)/register" asChild>
+            <Text style={styles.link}> Sign up</Text>
+          </Link>
+        </View>
+      </View>
     </View>
-  )
+  );
 }
 
-export default login
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: 420, // looks great on web
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3, // Android shadow
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#0f172a",
+    textAlign: "center",
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    marginTop: 4,
+  },
+
+  field: {
+    marginTop: 20,
+  },
+
+  label: {
+    fontSize: 13,
+    color: "#475569",
+    marginBottom: 6,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#0f172a",
+    backgroundColor: "#ffffff",
+  },
+
+  button: {
+    marginTop: 24,
+    backgroundColor: "#2563eb",
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 24,
+  },
+
+  footerText: {
+    color: "#64748b",
+    fontSize: 14,
+  },
+
+  link: {
+    color: "#2563eb",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  errorBox: {
+  marginTop: 16,
+  paddingVertical: 10,
+  paddingHorizontal: 14,
+  borderRadius: 12,
+  backgroundColor: "#fef2f2", // light red background
+  borderWidth: 1,
+  borderColor: "#fecaca", // soft red border
+},
+
+errorText: {
+  color: "#b91c1c", // red-700
+  fontSize: 14,
+  textAlign: "center",
+},
+});
