@@ -17,6 +17,7 @@ export default function Login() {
     password: "",
   });
   const [loading, setLoading] = useState<boolean>(false)
+  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
   
@@ -40,6 +41,7 @@ export default function Login() {
     if (loading) return
     setLoading(true)
     setError(null)
+    setMessage(null)
     if(!form.identifier || !form.password) {
       setError("Missing Credential")
       setLoading(false)
@@ -59,6 +61,8 @@ export default function Login() {
       const response = await axios.post(`${URL}auth/login/`, payload);
       
       if (response.status !== 200) return;
+
+      setMessage("Login Successfully")
       
       if (response.data?.token) {
         await AsyncStorage.setItem("token", response.data.token);
@@ -68,23 +72,27 @@ export default function Login() {
       console.log("data: ", response.data)
     } catch (error: any) {
       if (error.response) {
-        setError(error.response?.data?.error || "Network error, try again");
+        setError(
+          error.response?.data?.error || "Retry, network error."
+        );
       } else {
-        setError("Check your internet connection.")
+        setError("Network Error, Check your connection.")
       }
-    } finally{
-      setLoading(false)
+    } finally {
+        setLoading(false)
     }
   };
 
   useEffect(()=> {
-    if (!error) return
+    if (!error && !message) return
+  
     const clear = setTimeout(()=> {
       setError(null)
+      setMessage(null)
     }, 5000);
 
-    return () => clearInterval(clear)
-  }, [error])
+    return () => clearTimeout(clear)
+  }, [error, message])
 
   return (
     <View style={styles.container}>
@@ -98,6 +106,13 @@ export default function Login() {
             </View>
           )}
 
+          {message && (
+            <View style={styles.successBox}>
+              <Text style={styles.successText}>
+                {message}
+              </Text>
+            </View>
+          )}
         <View style={styles.field}>
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -162,7 +177,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "100%",
-    maxWidth: 420, // looks great on web
+    maxWidth: 420, 
     backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 24,
@@ -172,7 +187,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3, // Android shadow
+    elevation: 3, 
   },
 
   title: {
@@ -244,18 +259,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
+
+  successBox: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#f0fdf4", 
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  
+  successText: {
+    color: "#166534", 
+    fontSize: 14,
+    textAlign: "center",
+  },
+
   errorBox: {
   marginTop: 16,
   paddingVertical: 10,
   paddingHorizontal: 14,
   borderRadius: 12,
-  backgroundColor: "#fef2f2", // light red background
+  backgroundColor: "#fef2f2", 
   borderWidth: 1,
-  borderColor: "#fecaca", // soft red border
+  borderColor: "#fecaca", 
 },
 
 errorText: {
-  color: "#b91c1c", // red-700
+  color: "#b91c1c", 
   fontSize: 14,
   textAlign: "center",
 },
