@@ -2,8 +2,7 @@ import axios from 'axios'
 import React, { useState } from 'react'
 import { Text, TextInput, TouchableOpacity, View } from 'react-native'
 
-export default function register() {
-    const [data, setData] = useState()
+export default function Register() {
     const [form, setForm] = useState({
         email: "",
         username: "",
@@ -23,19 +22,13 @@ export default function register() {
     }
 
     const handleSubmit = async () => {
-        const dataPost = {
-            email: form.email,
-            username: form.username,
-            password: form.password
-        }
-
         try {
-            const response = await axios.post(`${URL}auth/register/`, dataPost);
+            const response = await axios.post(`${URL}auth/register/`, form);
 
-            if(!response.data.ok) {
-                console.log("Error:", response.data.error)
+            if(response.status !== 200) {
+                console.log("Cant register")
             }
-            setData(response.data)
+            
             setForm({
                 email: "",
                 username: "",
@@ -85,7 +78,7 @@ export default function register() {
         <TouchableOpacity
         onPress={handleSubmit}
         > 
-        Login
+       <Text> Login </Text>
         </TouchableOpacity>
     </View>
   )
