@@ -48,8 +48,13 @@ export default function Register() {
         setLoading(false)
         return
     }
+    const payload = {
+        email: form.email.trim(),
+        username: form.username.trim(),
+        password:form.password.trim()
+    }
     try {
-      const response = await axios.post(`${URL}auth/register/`, form);
+      const response = await axios.post(`${URL}auth/register/`, payload);
 
       if (response.status !== 201) return;
 
