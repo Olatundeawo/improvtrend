@@ -4,7 +4,7 @@ import { createStory, getStories, getStoryById } from "../services/story.service
 export async function create(req, res) {
     try {
         const userId = req.user.id
-        const { title, content } = req.body
+        const { title, content, characters } = req.body
         const maxChar = 50
         const maxCont = 150
 
@@ -24,7 +24,7 @@ export async function create(req, res) {
             throw new Error("You've passed the numbers of characters alllowed.")
         }
 
-        const story = await createStory(userId, {title, content});
+        const story = await createStory(userId, {title, content, characters});
         res.status(201).json(story)
     } catch ( err ) {
         res.status(400).json({ error: err.message })
