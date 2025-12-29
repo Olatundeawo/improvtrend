@@ -1,11 +1,39 @@
 import prisma from "../prisma/client.js";
+import parseCharacters from "../utils/parseCharacters.js";
 
-export async function createStory(userId, { title, content}) {
-    return prisma.story.create({
-        data: {
-            title, content, userId
-        }
-    })
+
+export async function createStory(userId, data) {
+  const { title, content, characters } = data;
+
+  const parsedCharacters = parseCharacters(characters);
+
+  if (parsedCharacters.length === 0) {
+    throw new Error("At least one character is required");
+  }
+
+  if (parsedCharacters.length > 5) {
+    throw new Error("You can create a maximum of 5 characters");
+  }
+
+  // prevent duplicates (case-insensitive)
+  const lower = parsedCharacters.map(c => c.toLowerCase());
+  if (new Set(lower).size !== parsedCharacters.length) {
+    throw new Error("Duplicate character names are not allowed");
+  }
+
+  return prisma.story.create({
+    data: {
+      title,
+      content,
+      userId,
+      characters: {
+        create: parsedCharacters.map(name => ({ name })),
+      },
+    },
+    include: {
+      characters: true,
+    },
+  });
 }
 
 export async function getStories() {
