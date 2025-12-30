@@ -46,14 +46,17 @@ export default function FeedList({
 }: FeedListProps) {
   const { width } = useWindowDimensions();
   const isTabletOrWeb = width >= 768;
+
   if (isLoading) {
     return <FeedSkeleton count={5} />;
-
   }
-  if (isLoading && stories.length === 0) {
+
+  
+  if (!isLoading && stories.length === 0) {
     return <EmptyFeed />;
   }
 
+  
   return (
     <FlatList
       data={stories}
@@ -70,7 +73,6 @@ export default function FeedList({
             isTabletOrWeb && styles.cardWide,
           ]}
         >
-          
           <View style={styles.header}>
             <View>
               <Text style={styles.username}>
@@ -92,17 +94,14 @@ export default function FeedList({
 
           <View style={styles.divider} />
 
-          
           <Text style={styles.title} numberOfLines={2}>
             {item.title}
           </Text>
 
-          
           <Text style={styles.content} numberOfLines={3}>
             {item.content}
           </Text>
 
-          
           {item.characters?.length > 0 && (
             <View style={styles.charactersWrapper}>
               {item.characters.map((char) => (
@@ -117,7 +116,6 @@ export default function FeedList({
 
           <View style={styles.divider} />
 
-          
           <View style={styles.engagementRow}>
             <View style={styles.engagementGroup}>
               <View style={styles.engagementItem}>
@@ -144,9 +142,7 @@ export default function FeedList({
               onPress={() => onStoryPress(item.id)}
               activeOpacity={0.9}
             >
-              <Text style={styles.ctaText}>
-                Contribute
-              </Text>
+              <Text style={styles.ctaText}>Contribute</Text>
             </TouchableOpacity>
           </View>
         </View>
