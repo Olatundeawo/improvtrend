@@ -36,16 +36,47 @@ export async function createStory(userId, data) {
   });
 }
 
-export async function getStories() {
-    return prisma.story.findMany({
-        include: {
-            turns: {
-                include: {upvotes: true}
-            }
+export async function getStories({ page = 1, limit = 10 }) {
+  const skip = (page - 1) * limit;
+
+  const [stories, total] = await Promise.all([
+    prisma.story.findMany({
+      skip,
+      take: limit,
+      include: {
+        turns: {
+          include: { upvotes: true },
         },
-        orderBy: {createdAt: "desc" }
-    });
+        characters: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        user: {
+          select: { username: true },
+        },
+        comments: {
+          select: { id: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.story.count(),
+  ]);
+
+  return {
+    data: stories,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + stories.length < total,
+    },
+  };
 }
+
 
 export async function getStoryById(id) {
     return prisma.story.findUnique({

@@ -36,17 +36,21 @@ export async function get(req, res) {
         const {id} = req.params
 
         const getStory = await getStoryById(id);
-        res.status(201).json(getStory)
+        res.status(200).json(getStory)
     } catch ( err ) {
         res.status(400).json({error: err.message})
     }
 }
 
 export async function getAll(req, res) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
     try {
-        const getAll = await getStories();
-        res.status(201).json(getAll)
+        const getAll = await getStories({page, limit});
+        res.status(200).json(getAll)
     } catch (err) {
-        res.json(400).json({Error: err.message})
+         res.status(400).json({Error: err.message})
+        
     }
 }
