@@ -79,18 +79,9 @@ export async function getStories({ page = 1, limit = 10 }) {
 
 
 export async function getStoryById(id) {
-    return prisma.story.findUnique({
-        where: { id },
-        include: {
-            turns: {
-                include: {
-                    upvotes: true,
-                    character: true,
-                    user: { select: {username: true}}
-                },
-                orderBy: { createdAt: "asc" }
-            },
-            comments: true
-        }
-    })
+  return prisma.story.findUnique({
+    where: { id },
+    
+    
+  });
 }
