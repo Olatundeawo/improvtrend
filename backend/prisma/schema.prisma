@@ -39,6 +39,7 @@ model Story {
 
   user          User        @relation(fields: [userId], references: [id])
   turns         Turn[]
+  characters    Character[]
   comments      Comment[]
 
   @@index([createdAt])
@@ -47,8 +48,12 @@ model Story {
 model Character {
   id             Int          @id @default(autoincrement())
   name           String       @unique
+  storyId        String
 
   turns          Turn[]
+  story          Story        @relation(fields: [storyId], references: [id])
+
+  @@unique([storyId, name])
 }
 
 model Turn {
