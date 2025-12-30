@@ -1,60 +1,18 @@
-// import { useSearchParams } from "expo-router";
-// import { useEffect, useState } from "react";
-// import { ScrollView, StyleSheet, Text, View } from "react-native";
-// import CommentInput from "../../components/story/CommentInput";
-// import CommentList from "../../components/story/CommentList";
-// import Storycard from "../components/StoryCard";
-// import { FeedStory } from "../components/type";
-// import { mockFeedStories } from "../mock/mockFeedStories";
+import { Text, View } from "react-native";
+import useStoryId from "../hooks/UseStoryId";
 
-// export default function StoryScreen() {
-//   const { id } = useSearchParams<{ id: string }>();
+export default function StoryScreen() {
+  const { story, loading } = useStoryId();
 
-//   const [story, setStory] = useState<FeedStory | null>(null);
-//   const [upvotes, setUpvotes] = useState(0);
-//   const [comments, setComments] = useState<string[]>([]);
+  if (loading) return <Text>Loading...</Text>;
+  if (!story) return <Text>Story not found</Text>;
 
-//   useEffect(() => {
-//     const stories = mockFeedStories();
-//     const selectedStory = stories.find((s) => s.storyId === id);
-//     if (selectedStory) {
-//       setStory(selectedStory);
-//       setUpvotes(selectedStory.upvoteCount);
-//     }
-//   }, [id]);
+  console.log("This is the story:", story)
 
-//   if (!story) {
-//     return (
-//       <View style={styles.emptyContainer}>
-//         <Text style={styles.emptyText}>Story not found.</Text>
-//       </View>
-//     );
-//   }
-
-//   const handleUpvote = () => setUpvotes(upvotes + 1);
-
-//   const handleAddComment = (text: string) => setComments([text, ...comments]);
-
-//   return (
-//     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-//       {/* Reuse StoryCard for consistent UI */}
-//       <Storycard
-//         story={{ ...story, upvoteCount: upvotes, commentCount: comments.length }}
-//         onPress={() => {}}
-//       />
-
-//       {/* Add new comment */}
-//       <CommentInput onSubmit={handleAddComment} />
-
-//       {/* List of comments */}
-//       <CommentList comments={comments} />
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: "#F9FAFB" },
-//   content: { padding: 16 },
-//   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-//   emptyText: { fontSize: 16, color: "#6B7280" },
-// });
+  return (
+    <View>
+      <Text>{story.title}</Text>
+      <Text>{story.content}</Text>
+    </View>
+  );
+}
