@@ -2,13 +2,13 @@ import axios from "axios";
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator, KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator, KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 export default function Register() {
