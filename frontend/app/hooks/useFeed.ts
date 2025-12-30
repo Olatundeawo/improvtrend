@@ -1,19 +1,9 @@
 import axios from "axios";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { Story } from "../components/type";
 
 export type FeedTabValue = "trending" | "newest" | "following";
-
-type Story = {
-  id: string;
-  title: string;
-  content: string;
-  isLocked: boolean;
-  createdAt: string;
-  username: string;
-  characters: { id: string; name: string }[];
-  turns: any[];
-  comments: { id: string }[];
-};
 
 export default function useFeed() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -21,6 +11,7 @@ export default function useFeed() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<FeedTabValue>("trending");
+  const router = useRouter()
 
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
@@ -52,19 +43,19 @@ export default function useFeed() {
     }
   };
 
-  /** Reset pagination when tab changes */
+  
   useEffect(() => {
     setPage(1);
     setHasMore(true);
     fetchStories(true);
   }, [activeTab]);
 
-  /** Initial fetch */
+  
   useEffect(() => {
     fetchStories(true);
   }, []);
 
-  /** Apply tab logic AFTER pagination */
+  
   const filteredStories = useMemo(() => {
     switch (activeTab) {
       case "trending":
@@ -85,7 +76,8 @@ export default function useFeed() {
   }, [stories, activeTab]);
 
   const handleStoryId = (id: string) => {
-    console.log("Story pressed:", id);
+    router.push(`(tabs)/story?id=${id}`)
+    console.log(id)
   };
 
   return {
