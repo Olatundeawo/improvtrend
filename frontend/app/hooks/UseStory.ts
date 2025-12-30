@@ -28,7 +28,7 @@ export default function UseStory() {
         }
         try {
 
-            const res = await axios.post(`URL${id}/turns/`, data, {
+            const res = await axios.post(`${URL}${id}/turns/`, data, {
                 headers: {
                     'Authorization': `Bearer ${token}`, 
                     'Content-Type': 'application/json'
