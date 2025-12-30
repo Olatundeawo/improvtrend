@@ -10,6 +10,10 @@ type Character = {
  type Turn = {
     id: string;
   };
+
+  type Upvote = {
+    userId: string
+  }
   
 export type Story = {
     id: string;
@@ -23,4 +27,18 @@ export type Story = {
     comments: Comment[];
     turns: Turn[];
   };
+
+export type Turns = {
+    storyId: string;
+    userId: string;
+    characterId: string;
+    content: string;
+    createdAt: string;
+    story: Story[];
+    characters: Character[];
+    user: {
+        username: string;
+      };
+    upvotes: Upvote[]
+}
   
