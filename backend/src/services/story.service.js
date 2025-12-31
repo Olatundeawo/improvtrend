@@ -81,7 +81,14 @@ export async function getStories({ page = 1, limit = 10 }) {
 export async function getStoryById(id) {
   return prisma.story.findUnique({
     where: { id },
-    
+    include: {
+      characters: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
     
   });
 }
