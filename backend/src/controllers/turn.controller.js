@@ -1,4 +1,4 @@
-import { addTurn } from "../services/turn.service.js";
+import { addTurn, getTurnsByStoryId } from "../services/turn.service.js";
 
 export async function continueStory( req, res) {
     try {
@@ -10,5 +10,17 @@ export async function continueStory( req, res) {
         res.status(201).json(turn)
     } catch (err) {
         res.status(400).json({ error: err.message })
+    }
+}
+
+export async function getTurns (req, res) {
+    try {
+        const { storyId } = req.params;
+
+        const turn = await getTurnsByStoryId(storyId)
+        res.status(201).json(turn)
+
+    } catch(err) {
+        res.status(400).json({ error: err.message})
     }
 }
