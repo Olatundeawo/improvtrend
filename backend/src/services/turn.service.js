@@ -24,3 +24,13 @@ export async function addTurn(storyId, userId, characterId, content) {
         }
     })
 }
+
+export async function getTurnsByStoryId(storyId) {
+  return prisma.turn.findMany({
+    where: { storyId },
+    orderBy: {
+      createdAt: "asc", 
+    },
+    
+  });
+}
