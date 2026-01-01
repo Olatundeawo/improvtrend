@@ -100,7 +100,8 @@ export default function FeedList({
                   {item.comments?.length ?? 0}
                 </Text>
                 <Text style={styles.engagementLabel}>
-                  Comments
+                  {(item.comments?.length ?? 0) <=1 ? "Comment" : "Comments"}
+                  
                 </Text>
               </View>
 
@@ -109,7 +110,8 @@ export default function FeedList({
                   {item.turns?.length ?? 0}
                 </Text>
                 <Text style={styles.engagementLabel}>
-                  Contributions
+                {(item.turns?.length ?? 0) <= 1 ? "Contribution" : "Contributions"}
+                  
                 </Text>
               </View>
             </View>
