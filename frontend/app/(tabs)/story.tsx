@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import formatTime from "../hooks/time";
+import FeedHeader from "../components/FeedHeader"
 import { toggleUpvote } from "../hooks/upvote";
 import FeedSkeleton from "../components/FeedSkeleton";
 import useStoryId from "../hooks/UseStoryId";
@@ -57,9 +58,11 @@ export default function StoryScreen() {
   }
 
   return (
+    <View style={styles.screen}>
+      <FeedHeader />
     <ScrollView
       ref={scrollRef}
-      style={styles.screen}
+      
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
@@ -212,6 +215,7 @@ export default function StoryScreen() {
         </Pressable>
       </Modal>
     </ScrollView>
+      </View>
   );
 }
 
