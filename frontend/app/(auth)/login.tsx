@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +22,7 @@ export default function Login() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const router = useRouter();
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
   
   type Form = {
@@ -70,6 +71,8 @@ export default function Login() {
       if (response.data?.token) {
         await AsyncStorage.setItem("token", response.data.token);
       }
+
+      router.replace("/")
       
       setForm({ identifier: "", password: "" });
       console.log("data: ", response.data)
