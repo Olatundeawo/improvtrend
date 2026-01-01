@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import formatTime from "../hooks/time";
+import { toggleUpvote } from "../hooks/upvote";
 import FeedSkeleton from "../components/FeedSkeleton";
 import useStoryId from "../hooks/UseStoryId";
 import useTurnId from "../hooks/useTurnId";
@@ -45,6 +46,15 @@ export default function StoryScreen() {
   );
 
   const canSubmit = Boolean(selectedCharacter && text.trim());
+
+  async function handleUpvote(turnId: string) {
+    try {
+      await toggleUpvote(turnId);
+      await refresh();
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   return (
     <ScrollView
@@ -129,37 +139,43 @@ export default function StoryScreen() {
               data={turns}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
-              renderItem={({ item }) => (
-                <View style={styles.turnCard}>
-                  {/* Header */}
-                  <View style={styles.turnHeader}>
-                    <View style={styles.turnIdentity}>
-                      <Text style={styles.turnCharacter}>
-                        {item.character?.name}
-                      </Text>
-                      <Text style={styles.turnAuthor}>
-                        {item.user?.username}
-                      </Text>
-                    </View>
+              renderItem={({ item }) => {
+                const upvoteCount = item.upvotes?.length || 0;
 
-                    <View style={styles.turnRight}>
-                      <Text style={styles.turnTime}>
-                        {formatTime(item.createdAt)}
-                      </Text>
-
-                      {/* Upvote Button UI */}
-                      <Pressable style={styles.upvoteButton}>
-                        <Text style={styles.upvoteArrow}>▲</Text>
-                        <Text style={styles.upvoteCount}>
-                          {item.upvotes?.length ?? 0}
+                return (
+                  <View style={styles.turnCard}>
+                    <View style={styles.turnHeader}>
+                      <View style={styles.turnIdentity}>
+                        <Text style={styles.turnCharacter}>
+                          {item.character?.name}
                         </Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                        <Text style={styles.turnAuthor}>
+                          {item.user?.username}
+                        </Text>
+                      </View>
 
-                  <Text style={styles.turnContent}>{item.content}</Text>
-                </View>
-              )}
+                      <View style={styles.turnRight}>
+                        <Text style={styles.turnTime}>
+                          {formatTime(item.createdAt)}
+                        </Text>
+
+                        {/* ✅ CLEAN UPVOTE BUTTON */}
+                        <Pressable
+                          onPress={() => handleUpvote(item.id)}
+                          style={styles.upvoteButton}
+                        >
+                          <Text style={styles.upvoteArrow}>▲</Text>
+                          <Text style={styles.upvoteCount}>
+                            Upvote {upvoteCount}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+
+                    <Text style={styles.turnContent}>{item.content}</Text>
+                  </View>
+                );
+              }}
             />
           ) : (
             <View style={styles.emptyState}>
@@ -290,10 +306,7 @@ const styles = StyleSheet.create({
   turnCharacter: { color: "#2563EB", fontWeight: "700", fontSize: 14 },
   turnAuthor: { color: "#64748B", fontSize: 13 },
 
-  turnRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
+  turnRight: { alignItems: "flex-end", gap: 6 },
 
   turnTime: { fontSize: 12, color: "#94A3B8" },
 
@@ -301,7 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#EFF6FF",
