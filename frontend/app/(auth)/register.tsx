@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator, KeyboardAvoidingView,
@@ -23,6 +23,7 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const router = useRouter()
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   type Form = {
@@ -72,6 +73,7 @@ export default function Register() {
       if (response.status !== 201) return;
 
       setMessage("Succesfully Created an Account")
+      router.replace("(auth)/login")
       setForm({
         email: "",
         username: "",
