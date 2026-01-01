@@ -9,22 +9,22 @@ export default function useTurnId() {
 
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
+  
+      const getStory = async () => {
+        try {
+          const res = await axios.get(`${URL}${id}/turns/`);
+          setTurn(res.data);
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setLoading(false);
+        }
+      };
   useEffect(() => {
     if (!id) return;
-
-    const getStory = async () => {
-      try {
-        const res = await axios.get(`${URL}${id}/turns/`);
-        setTurn(res.data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     getStory();
   }, [id]);
 
-  return { turn, loading };
+  return { turn, loading, refresh:getStory };
 }
