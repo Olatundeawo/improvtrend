@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
-    Dimensions,
-    FlatList,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Dimensions,
+  FlatList,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  ScrollView,
 } from "react-native";
 import FeedSkeleton from "../components/FeedSkeleton";
 import useStoryId from "../hooks/UseStoryId";
@@ -20,7 +21,7 @@ const MAX_WIDTH = 720;
 
 export default function StoryScreen() {
   const { story, loading } = useStoryId();
-  const { turn } = useTurnId()
+  const { turn } = useTurnId();
 
   const turns = Array.isArray(turn) ? turn : [];
   const hasTurns = turns.length > 0;
@@ -32,20 +33,24 @@ export default function StoryScreen() {
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [text, setText] = useState("");
 
-  if (loading) return <FeedSkeleton count={5}/>;
+  const scrollRef = useRef<ScrollView>(null);
+
+  if (loading) return <FeedSkeleton count={5} />;
   if (!story) return <Text style={styles.stateText}>Story not found</Text>;
-//   if (!turn && !story) return <Text style={styles.stateText}>Be the first to Contribute.</Text>
 
   const selectedCharacter = story.characters.find(
     (c) => c.id === characterId
   );
 
-  console.log("This is the turns: ", turn)
-
   const canSubmit = Boolean(selectedCharacter && text.trim());
 
   return (
-    <View style={styles.screen}>
+    <ScrollView
+      ref={scrollRef}
+      style={styles.screen}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.container}>
         {/* ===== Story ===== */}
         <Text style={styles.title}>{story.title}</Text>
@@ -92,42 +97,6 @@ export default function StoryScreen() {
             onBlur={() => setIsTextareaFocused(false)}
           />
         </View>
-        <View style={styles.turnsWrapper}>
-  <Text style={styles.turnsTitle}>Community Contributions</Text>
-
-  {hasTurns ? (
-    <FlatList
-      data={turns}
-      keyExtractor={(item) => item.id}
-      scrollEnabled={false}
-      renderItem={({ item }) => (
-        <View style={styles.turnCard}>
-          <View style={styles.turnMeta}>
-            <Text style={styles.turnCharacter}>
-              {item.character?.name}
-            </Text>
-            <Text style={styles.turnAuthor}>
-              by {item.user?.name}
-            </Text>
-          </View>
-
-          <Text style={styles.turnContent}>{item.content}</Text>
-        </View>
-      )}
-    />
-  ) : (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>
-        Be the first to contribute
-      </Text>
-      <Text style={styles.emptyText}>
-        This story hasn’t been continued yet. Choose a character and
-        write the next part of the story.
-      </Text>
-    </View>
-  )}
-</View>
-
 
         {/* ===== Submit ===== */}
         <Pressable
@@ -136,10 +105,53 @@ export default function StoryScreen() {
             styles.primaryButton,
             !canSubmit && styles.primaryButtonDisabled,
           ]}
+          onPress={() => {
+            // submit logic here
+            setText("");
+            setTimeout(() => {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }, 300);
+          }}
         >
           <Text style={styles.primaryButtonText}>Submit turn</Text>
         </Pressable>
+
         {/* ===== Turns Section ===== */}
+        <View style={styles.turnsWrapper}>
+          <Text style={styles.turnsTitle}>Community Contributions</Text>
+
+          {hasTurns ? (
+            <FlatList
+              data={turns}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item }) => (
+                <View style={styles.turnCard}>
+                  <View style={styles.turnMeta}>
+                    <Text style={styles.turnCharacter}>
+                      {item.character?.name}
+                    </Text>
+                    <Text style={styles.turnAuthor}>
+                      by {item.user?.name}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.turnContent}>{item.content}</Text>
+                </View>
+              )}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                Be the first to contribute
+              </Text>
+              <Text style={styles.emptyText}>
+                This story hasn’t been continued yet. Choose a character and
+                write the next part of the story.
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* ===== Dropdown Modal ===== */}
@@ -170,23 +182,21 @@ export default function StoryScreen() {
           </View>
         </Pressable>
       </Modal>
-      
-
-    </View>
-      
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  
   screen: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+  },
+
+  scrollContent: {
     alignItems: "center",
     paddingVertical: 24,
   },
 
-  
   container: {
     width: "100%",
     maxWidth: MAX_WIDTH,
@@ -206,7 +216,6 @@ const styles = StyleSheet.create({
     }),
   },
 
-  
   stateText: {
     marginTop: 120,
     fontSize: 16,
@@ -214,7 +223,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  
   title: {
     fontSize: 26,
     fontWeight: "800",
@@ -248,7 +256,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  
   dropdown: {
     height: 54,
     borderRadius: 14,
@@ -269,7 +276,6 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
   },
 
-  
   textarea: {
     minHeight: 150,
     borderRadius: 16,
@@ -287,7 +293,6 @@ const styles = StyleSheet.create({
     }),
   },
 
-  
   focusedField: {
     borderColor: "#2563EB",
     shadowColor: "#2563EB",
@@ -300,7 +305,6 @@ const styles = StyleSheet.create({
     }),
   },
 
-  
   primaryButton: {
     marginTop: 28,
     height: 54,
@@ -326,7 +330,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  
   overlay: {
     flex: 1,
     backgroundColor: "rgba(15,23,42,0.35)",
@@ -366,80 +369,77 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#0F172A",
   },
-  /* ===== Turns Section ===== */
-turnsWrapper: {
-  width: "100%",
-  maxWidth: MAX_WIDTH,
-  marginTop: 32,
-},
 
-turnsTitle: {
-  fontSize: 18,
-  fontWeight: "700",
-  color: "#0F172A",
-  marginBottom: 16,
-},
+  turnsWrapper: {
+    width: "100%",
+    marginTop: 32,
+  },
 
-turnCard: {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 16,
-  padding: 16,
-  marginBottom: 14,
-  borderWidth: 1,
-  borderColor: "#E5E7EB",
+  turnsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 16,
+  },
 
-  shadowColor: "#000",
-  shadowOpacity: 0.05,
-  shadowRadius: 8,
-  elevation: 3,
-},
+  turnCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
 
-turnMeta: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginBottom: 8,
-},
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
 
-turnCharacter: {
-  fontSize: 14,
-  fontWeight: "600",
-  color: "#2563EB",
-},
+  turnMeta: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
 
-turnAuthor: {
-  fontSize: 13,
-  color: "#64748B",
-},
+  turnCharacter: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2563EB",
+  },
 
-turnContent: {
-  fontSize: 15,
-  lineHeight: 24,
-  color: "#334155",
-},
+  turnAuthor: {
+    fontSize: 13,
+    color: "#64748B",
+  },
 
-/* ===== Empty State ===== */
-emptyState: {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 16,
-  padding: 24,
-  borderWidth: 1,
-  borderStyle: "dashed",
-  borderColor: "#CBD5E1",
-  alignItems: "center",
-},
+  turnContent: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: "#334155",
+  },
 
-emptyTitle: {
-  fontSize: 16,
-  fontWeight: "700",
-  color: "#0F172A",
-  marginBottom: 6,
-},
+  emptyState: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+  },
 
-emptyText: {
-  fontSize: 14,
-  color: "#64748B",
-  textAlign: "center",
-  lineHeight: 22,
-},
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 6,
+  },
 
+  emptyText: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 22,
+  },
 });
