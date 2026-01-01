@@ -82,6 +82,7 @@ model TurnUpvote {
   user            User        @relation(fields: [userId], references: [id])
 
   @@index([turnId, userId])
+  @@unique([turnId, userId])
 }
 
 model Comment {
