@@ -28,6 +28,23 @@ export async function addTurn(storyId, userId, characterId, content) {
 export async function getTurnsByStoryId(storyId) {
   return prisma.turn.findMany({
     where: { storyId },
+    include: {
+        user : {
+            select: {
+                username: true
+            }
+        },
+        character: {
+            select: {
+                name: true
+            }
+        },
+        upvotes: {
+            select: {
+                id: true
+            }
+        }
+    },
     orderBy: {
       createdAt: "asc", 
     },
