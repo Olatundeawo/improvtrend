@@ -14,6 +14,7 @@ import {
 import FeedSkeleton from "../components/FeedSkeleton";
 import useStoryId from "../hooks/UseStoryId";
 import useTurnId from "../hooks/useTurnId";
+import useTurn from "../hooks/useTurn"
 
 const { width } = Dimensions.get("window");
 const IS_WEB = Platform.OS === "web";
@@ -21,28 +22,33 @@ const MAX_WIDTH = 720;
 
 export default function StoryScreen() {
   const { story, loading } = useStoryId();
-  const { turn } = useTurnId();
+  const { turn, refresh } = useTurnId();
+  const { createTurn } = useTurn()
 
+  console.log("This is turn:", createTurn)
+  
   const turns = Array.isArray(turn) ? turn : [];
   const hasTurns = turns.length > 0;
 
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-
+  
   const [isDropdownFocused, setIsDropdownFocused] = useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [text, setText] = useState("");
-
+  
   const scrollRef = useRef<ScrollView>(null);
-
+  
   if (loading) return <FeedSkeleton count={5} />;
   if (!story) return <Text style={styles.stateText}>Story not found</Text>;
-
+  
   const selectedCharacter = story.characters.find(
     (c) => c.id === characterId
   );
-
+  
   const canSubmit = Boolean(selectedCharacter && text.trim());
+  
+  
 
   return (
     <ScrollView
@@ -105,12 +111,24 @@ export default function StoryScreen() {
             styles.primaryButton,
             !canSubmit && styles.primaryButtonDisabled,
           ]}
-          onPress={() => {
-            // submit logic here
-            setText("");
-            setTimeout(() => {
-              scrollRef.current?.scrollToEnd({ animated: true });
-            }, 300);
+          onPress={async () => {
+            if (!selectedCharacter) return;
+
+            const created = await createTurn(
+              selectedCharacter.id,
+              text.trim()
+            );
+
+            if (created) {
+              setText("");
+              setCharacterId(null);
+
+              await rrefresh();
+
+              setTimeout(() => {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }, 300);
+            }
           }}
         >
           <Text style={styles.primaryButtonText}>Submit turn</Text>
