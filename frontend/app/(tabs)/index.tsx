@@ -17,7 +17,6 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.screen}>
-      <FeedHeader />
 
       <View
         style={[
