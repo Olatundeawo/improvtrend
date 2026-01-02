@@ -1,9 +1,8 @@
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import FeedHeader from "../components/FeedHeader";
-import FeedList from "../components/FeedLists";
 import FeedTab from "../components/FeedTabs";
-import useFeed from "../hooks/useFeed";
+import FeedList from "../components/FeedLists";
 import Rules from "../components/rule";
+import useFeed from "../hooks/useFeed";
 
 export default function FeedScreen() {
   const {
@@ -17,7 +16,7 @@ export default function FeedScreen() {
     loadMore,
   } = useFeed();
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isLargeScreen = width >= 768;
 
   return (
@@ -28,17 +27,18 @@ export default function FeedScreen() {
           isLargeScreen && styles.contentWrapperLarge,
         ]}
       >
-        {/* Main layout */}
+        {/* FULL-WIDTH TAB */}
+        <FeedTab value={activeTab} onChange={setActiveTab} />
+
+        {/* MAIN CONTENT */}
         <View
           style={[
             styles.mainLayout,
             isLargeScreen && styles.mainLayoutLarge,
           ]}
         >
-          {/* LEFT: Feed section */}
+          {/* FEED (SCROLLS) */}
           <View style={styles.feedSection}>
-            <FeedTab value={activeTab} onChange={setActiveTab} />
-
             <FeedList
               stories={stories}
               onStoryPress={handleStoryId}
@@ -49,7 +49,7 @@ export default function FeedScreen() {
             />
           </View>
 
-          {/* RIGHT: Rules (only on large screens) */}
+          {/* RULES (STATIC) */}
           {isLargeScreen && (
             <View style={styles.rulesSection}>
               <Rules />
@@ -65,6 +65,7 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    height: "100vh", 
     backgroundColor: "#F9FAFB",
   },
 
@@ -72,14 +73,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     paddingHorizontal: 16,
-    paddingTop: 12,
   },
 
   contentWrapperLarge: {
     maxWidth: 1200,
     alignSelf: "center",
     paddingHorizontal: 24,
-    paddingTop: 20,
   },
 
   mainLayout: {
@@ -87,18 +86,19 @@ const styles = StyleSheet.create({
   },
 
   mainLayoutLarge: {
+    flex: 1,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "stretch", 
     gap: 24,
   },
 
   feedSection: {
     flex: 1,
+    minHeight: 0, 
   },
 
   rulesSection: {
     width: 320,
-    position: "sticky", // works on web
-    top: 20,
+    flexShrink: 0,
   },
 });
