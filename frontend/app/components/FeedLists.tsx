@@ -10,6 +10,15 @@ import FeedSkeleton from "./FeedSkeleton";
 import { Story } from "./type";
 import formatTime from '../hooks/time'
 
+const FONT = {
+  regular: "Inter_400Regular",
+  medium: "Inter_500Medium",
+  semibold: "Inter_600SemiBold",
+  bold: "Inter_700Bold",
+  title: "PlayfairDisplay_600SemiBold",
+};
+
+
 type FeedListProps = {
   stories: Story[];
   onStoryPress: (id: string) => void;
@@ -25,12 +34,12 @@ export default function FeedList({
   const isTabletOrWeb = width >= 768;
 
   if (isLoading) {
-    return <FeedSkeleton count={5} />;
   }
-
+  
   
   if (!isLoading && stories.length === 0) {
-    return <EmptyFeed />;
+    // return <EmptyFeed />;
+    return <FeedSkeleton count={5} />;
   }
 
   
@@ -140,166 +149,178 @@ function EmptyFeed() {
     );
   }
 
-
-
-const styles = StyleSheet.create({
-  list: {
-    paddingVertical: 8,
-  },
-
-  listWide: {
-    paddingHorizontal: 24,
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    marginHorizontal: 12,
-    marginVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-
-  cardWide: {
-    maxWidth: 720,
-    alignSelf: "center",
-    width: "100%",
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  username: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#111827",
-  },
-
-  time: {
-    fontSize: 11,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-
-  openButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#EEF2FF",
-  },
-
-  openText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4F46E5",
-  },
-
-  title: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 6,
-  },
-
-  content: {
-    fontSize: 14,
-    color: "#374151",
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-
-
-  charactersWrapper: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-
-  characterChip: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-
-  characterText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#374151",
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E7EB",
-    marginVertical: 14,
-  },
-
-  engagementRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-
-  engagementGroup: {
-    flexDirection: "row",
-    gap: 20,
-  },
-
-  engagementItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  engagementCount: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#111827",
-    marginRight: 4,
-  },
-
-  engagementLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-
-  ctaButton: {
-    backgroundColor: "#4F46E5",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-
-  ctaText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  emptyContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 60,
-        paddingHorizontal: 24,
-      },
-      emptyText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#111827",
-        textAlign: "center",
-      },
-      emptySubText: {
-        fontSize: 14,
-        color: "#6B7280",
-        marginTop: 8,
-        textAlign: "center",
-      },
-});
-
+  const styles = StyleSheet.create({
+    list: {
+      paddingVertical: 8,
+    },
+  
+    listWide: {
+      paddingHorizontal: 24,
+    },
+  
+    card: {
+      backgroundColor: "#FFFFFF",
+      padding: 16,
+      marginHorizontal: 12,
+      marginVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+  
+    cardWide: {
+      maxWidth: 720,
+      alignSelf: "center",
+      width: "100%",
+    },
+  
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+  
+    /** ─── META ─── */
+    username: {
+      fontSize: 13,
+      fontFamily: FONT.semibold,
+      color: "#111827",
+    },
+  
+    time: {
+      fontSize: 11,
+      fontFamily: FONT.regular,
+      color: "#6B7280",
+      marginTop: 2,
+    },
+  
+    /** ─── ACTIONS ─── */
+    openButton: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: "#EEF2FF",
+    },
+  
+    openText: {
+      fontSize: 13,
+      fontFamily: FONT.semibold,
+      color: "#4F46E5",
+    },
+  
+    /** ─── STORY ─── */
+    title: {
+      fontSize: 18,
+      fontFamily: FONT.title,
+      color: "#111827",
+      marginBottom: 6,
+      lineHeight: 24,
+    },
+  
+    content: {
+      fontSize: 14,
+      fontFamily: FONT.regular,
+      color: "#374151",
+      lineHeight: 22,
+      marginBottom: 12,
+    },
+  
+    /** ─── CHARACTERS ─── */
+    charactersWrapper: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+  
+    characterChip: {
+      backgroundColor: "#F3F4F6",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+  
+    characterText: {
+      fontSize: 12,
+      fontFamily: FONT.medium,
+      color: "#374151",
+    },
+  
+    divider: {
+      height: 1,
+      backgroundColor: "#E5E7EB",
+      marginVertical: 14,
+    },
+  
+    /** ─── ENGAGEMENT ─── */
+    engagementRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12,
+    },
+  
+    engagementGroup: {
+      flexDirection: "row",
+      gap: 20,
+    },
+  
+    engagementItem: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+  
+    engagementCount: {
+      fontSize: 13,
+      fontFamily: FONT.semibold,
+      color: "#111827",
+      marginRight: 4,
+    },
+  
+    engagementLabel: {
+      fontSize: 12,
+      fontFamily: FONT.regular,
+      color: "#6B7280",
+    },
+  
+    /** ─── CTA ─── */
+    ctaButton: {
+      backgroundColor: "#4F46E5",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 10,
+    },
+  
+    ctaText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontFamily: FONT.semibold,
+    },
+  
+    /** ─── EMPTY ─── */
+    emptyContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 60,
+      paddingHorizontal: 24,
+    },
+  
+    emptyText: {
+      fontSize: 16,
+      fontFamily: FONT.semibold,
+      color: "#111827",
+      textAlign: "center",
+    },
+  
+    emptySubText: {
+      fontSize: 14,
+      fontFamily: FONT.regular,
+      color: "#6B7280",
+      marginTop: 8,
+      textAlign: "center",
+    },
+  });
+  
 
