@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -36,6 +36,17 @@ export default function CreateStory() {
   });
 
   const [errors, setErrors] = useState<Partial<Data>>({});
+  const [feedback, setFeedback] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
+ 
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   function handleChange<K extends keyof Data>(field: K, value: Data[K]) {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -81,9 +92,22 @@ export default function CreateStory() {
       );
 
       setData({ title: "", characters: "", content: "" });
+      setFeedback({
+        type: "success",
+        text: "Story created successfully",
+      });
+
+      router.replace("/")
+
       onClose();
-    } catch (err) {
-      console.error("Error creating story", err);
+    } catch (err: any) {
+        if (axios.isAxiosError(err)) {
+            setFeedback({
+                type: "error",
+                text: err.response?.data.error || "Network error, check your internet connection",
+              });
+          } 
+          
     } finally {
       setLoading(false);
     }
@@ -101,6 +125,19 @@ export default function CreateStory() {
         {/* MODAL */}
         <TouchableWithoutFeedback>
           <View style={styles.modal}>
+          {feedback && (
+              <View
+                style={[
+                  styles.feedback,
+                  feedback.type === "error"
+                    ? styles.feedbackError
+                    : styles.feedbackSuccess,
+                ]}
+              >
+                <Text style={styles.feedbackText}>{feedback.text}</Text>
+              </View>
+            )}
+
             {/* HEADER */}
             <View style={styles.header}>
               <Text style={styles.title}>Create New Story</Text>
@@ -226,6 +263,32 @@ const styles = StyleSheet.create({
       maxWidth: 560,
       alignSelf: "center",
     }),
+  },
+
+  feedback: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+
+  feedbackError: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+
+  feedbackSuccess: {
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+
+  feedbackText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0F172A",
+    textAlign: "center",
   },
 
   header: {
