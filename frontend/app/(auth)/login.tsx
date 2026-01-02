@@ -75,7 +75,7 @@ export default function Login() {
       router.replace("/")
       
       setForm({ identifier: "", password: "" });
-      console.log("data: ", response.data)
+      
     } catch (error: any) {
       if (error.response) {
         setError(
