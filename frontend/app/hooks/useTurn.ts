@@ -13,7 +13,7 @@ export default function useTurn() {
     characterId: string,
     content: string
   ) => {
-    setError(null)
+    setError(nul)
     setMessage(null)
     const token = await AsyncStorage.getItem("token");
 
