@@ -10,6 +10,8 @@ export default function FeedScreen() {
     activeTab,
     setActiveTab,
     handleStoryId,
+    loading,
+    loadMore,
   } = useFeed();
 
   const { width } = useWindowDimensions();
@@ -32,6 +34,8 @@ export default function FeedScreen() {
         <FeedList
           stories={stories}
           onStoryPress={handleStoryId}
+          isLoading={loading}
+          onRetry={loadMore}
         />
       </View>
     </View>
