@@ -10,6 +10,7 @@ import FeedSkeleton from "./FeedSkeleton";
 import { Story } from "./type";
 import formatTime from '../hooks/time'
 import { useState } from 'react'
+import { RefreshControl } from "react-native";
 
 const FONT = {
   regular: "Inter_400Regular",
@@ -25,7 +26,10 @@ type FeedListProps = {
   stories: Story[];
   onStoryPress: (id: string) => void;
   isLoading?: boolean;
+  refreshing?: boolean;
   onRetry?: () => void;
+  onRefresh?: () => void;
+  
 };
 
 export default function FeedList({
@@ -33,6 +37,8 @@ export default function FeedList({
   onStoryPress,
   isLoading ,
   onRetry,
+  refreshing,
+  onRefresh,
 }: FeedListProps) {
   const { width } = useWindowDimensions();
   const isTabletOrWeb = width >= 768;
@@ -52,6 +58,16 @@ export default function FeedList({
       data={stories}
       keyExtractor={(item) => item.id}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl
+            refreshing={!!refreshing}
+            onRefresh={onRefresh}
+            tintColor="#4F46E5"
+            colors={["#4F46E5"]}
+          />
+        ) : undefined
+      }
       contentContainerStyle={[
         styles.list,
         isTabletOrWeb && styles.listWide,
