@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dimensions,
   FlatList,
@@ -11,8 +11,9 @@ import {
   View,
   ScrollView,
 } from "react-native";
+
 import formatTime from "../hooks/time";
-import FeedHeader from "../components/FeedHeader"
+import FeedHeader from "../components/FeedHeader";
 import { toggleUpvote } from "../hooks/upvote";
 import FeedSkeleton from "../components/FeedSkeleton";
 import useStoryId from "../hooks/UseStoryId";
@@ -26,7 +27,7 @@ const MAX_WIDTH = 720;
 export default function StoryScreen() {
   const { story, loading } = useStoryId();
   const { turn, refresh } = useTurnId();
-  const { createTurn } = useTurn();
+  const { createTurn, error, message } = useTurn();
 
   const turns = Array.isArray(turn) ? turn : [];
   const hasTurns = turns.length > 0;
@@ -36,8 +37,32 @@ export default function StoryScreen() {
   const [isDropdownFocused, setIsDropdownFocused] = useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [text, setText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [feedback, setFeedback] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (error) {
+      setFeedback({ type: "error", text: error });
+    }
+
+    if (message) {
+      setFeedback({ type: "success", text: message });
+    }
+
+    if (error || message) {
+      const timer = setTimeout(() => {
+        setFeedback(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error, message]);
 
   if (loading) return <FeedSkeleton count={5} />;
   if (!story) return <Text style={styles.stateText}>Story not found</Text>;
@@ -46,7 +71,11 @@ export default function StoryScreen() {
     (c) => c.id === characterId
   );
 
-  const canSubmit = Boolean(selectedCharacter && text.trim());
+  const canSubmit = Boolean(
+    selectedCharacter &&
+    text.trim() &&
+    !isSubmitting
+  );
 
   async function handleUpvote(turnId: string) {
     try {
@@ -60,39 +89,53 @@ export default function StoryScreen() {
   return (
     <View style={styles.screen}>
       <FeedHeader />
-    <ScrollView
-      ref={scrollRef}
-      
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>{story.title}</Text>
-        <Text style={styles.content}>{story.content}</Text>
 
-        <Text style={styles.label}>Choose a character</Text>
-        <Pressable
-          style={[styles.dropdown, isDropdownFocused && styles.focusedField]}
-          onPressIn={() => setIsDropdownFocused(true)}
-          onPressOut={() => setIsDropdownFocused(false)}
-          onPress={() => setOpen(true)}
+      {feedback && (
+        <View
+          style={[
+            styles.feedback,
+            feedback.type === "error"
+              ? styles.feedbackError
+              : styles.feedbackSuccess,
+          ]}
         >
-          <Text
-            style={[
-              styles.dropdownText,
-              !selectedCharacter && styles.placeholder,
-            ]}
-          >
-            {selectedCharacter ? selectedCharacter.name : "Select character"}
-          </Text>
-        </Pressable>
+          <Text style={styles.feedbackText}>{feedback.text}</Text>
+        </View>
+      )}
 
-        <View style={styles.section}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>{story.title}</Text>
+          <Text style={styles.content}>{story.content}</Text>
+
+          <Text style={styles.label}>Choose a character</Text>
+          <Pressable
+            style={[styles.dropdown, isDropdownFocused && styles.focusedField]}
+            onPressIn={() => setIsDropdownFocused(true)}
+            onPressOut={() => setIsDropdownFocused(false)}
+            onPress={() => setOpen(true)}
+            disabled={isSubmitting}
+          >
+            <Text
+              style={[
+                styles.dropdownText,
+                !selectedCharacter && styles.placeholder,
+              ]}
+            >
+              {selectedCharacter ? selectedCharacter.name : "Select character"}
+            </Text>
+          </Pressable>
+
           <Text style={styles.sectionLabel}>Continue the story</Text>
           <TextInput
             multiline
             numberOfLines={6}
             value={text}
+            editable={!isSubmitting}
             onChangeText={setText}
             placeholder="Write the next part of the story…"
             placeholderTextColor="#9CA3AF"
@@ -103,119 +146,130 @@ export default function StoryScreen() {
             onFocus={() => setIsTextareaFocused(true)}
             onBlur={() => setIsTextareaFocused(false)}
           />
-        </View>
 
-        <Pressable
-          disabled={!canSubmit}
-          style={[
-            styles.primaryButton,
-            !canSubmit && styles.primaryButtonDisabled,
-          ]}
-          onPress={async () => {
-            if (!selectedCharacter) return;
+          {/* SUBMIT BUTTON */}
+          <Pressable
+            disabled={!canSubmit}
+            style={[
+              styles.primaryButton,
+              (!canSubmit || isSubmitting) &&
+                styles.primaryButtonDisabled,
+            ]}
+            onPress={async () => {
+              if (!selectedCharacter || isSubmitting) return;
 
-            const created = await createTurn(
-              selectedCharacter.id,
-              text.trim()
-            );
+              setIsSubmitting(true);
 
-            if (created) {
-              setText("");
-              setCharacterId(null);
-              await refresh();
-
-              setTimeout(() => {
-                scrollRef.current?.scrollToEnd({ animated: true });
-              }, 300);
-            }
-          }}
-        >
-          <Text style={styles.primaryButtonText}>Submit turn</Text>
-        </Pressable>
-
-        {/* ===== Community Contributions ===== */}
-        <View style={styles.turnsWrapper}>
-          <Text style={styles.turnsTitle}>Community Contributions</Text>
-
-          {hasTurns ? (
-            <FlatList
-              data={turns}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => {
-                const upvoteCount = item.upvotes?.length || 0;
-
-                return (
-                  <View style={styles.turnCard}>
-                    <View style={styles.turnHeader}>
-                      <View style={styles.turnIdentity}>
-                        <Text style={styles.turnCharacter}>
-                          {item.character?.name}
-                        </Text>
-                        <Text style={styles.turnAuthor}>
-                          {item.user?.username}
-                        </Text>
-                      </View>
-
-                      <View style={styles.turnRight}>
-                        <Text style={styles.turnTime}>
-                          {formatTime(item.createdAt)}
-                        </Text>
-
-                        {/* ✅ CLEAN UPVOTE BUTTON */}
-                        <Pressable
-                          onPress={() => handleUpvote(item.id)}
-                          style={styles.upvoteButton}
-                        >
-                          <Text style={styles.upvoteArrow}>▲</Text>
-                          <Text style={styles.upvoteCount}>
-                            Upvote {upvoteCount}
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-
-                    <Text style={styles.turnContent}>{item.content}</Text>
-                  </View>
+              try {
+                const created = await createTurn(
+                  selectedCharacter.id,
+                  text.trim()
                 );
-              }}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Be the first to contribute</Text>
-              <Text style={styles.emptyText}>
-                This story hasn’t been continued yet. Choose a character and
-                write the next part of the story.
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
 
-      {/* Dropdown */}
-      <Modal visible={open} transparent animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
-          <View style={[styles.menu, IS_WEB ? styles.menuWeb : styles.menuMobile]}>
-            <FlatList
-              data={story.characters}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.option}
-                  onPress={() => {
-                    setCharacterId(item.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Text style={styles.optionText}>{item.name}</Text>
-                </Pressable>
-              )}
-            />
+                if (created) {
+                  setText("");
+                  setCharacterId(null);
+                  await refresh();
+
+                  setTimeout(() => {
+                    scrollRef.current?.scrollToEnd({ animated: true });
+                  }, 300);
+                }
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isSubmitting ? "Submitting..." : "Submit turn"}
+            </Text>
+          </Pressable>
+
+          <View style={styles.turnsWrapper}>
+            <Text style={styles.turnsTitle}>Community Contributions</Text>
+
+            {hasTurns ? (
+              <FlatList
+                data={turns}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                renderItem={({ item }) => {
+                  const upvoteCount = item.upvotes?.length || 0;
+
+                  return (
+                    <View style={styles.turnCard}>
+                      <View style={styles.turnHeader}>
+                        <View style={styles.turnIdentity}>
+                          <Text style={styles.turnCharacter}>
+                            {item.character?.name}
+                          </Text>
+                          <Text style={styles.turnAuthor}>
+                            {item.user?.username}
+                          </Text>
+                        </View>
+
+                        <View style={styles.turnRight}>
+                          <Text style={styles.turnTime}>
+                            {formatTime(item.createdAt)}
+                          </Text>
+
+                          <Pressable
+                            onPress={() => handleUpvote(item.id)}
+                            style={styles.upvoteButton}
+                          >
+                            <Text style={styles.upvoteArrow}>▲</Text>
+                            <Text style={styles.upvoteCount}>
+                              Upvote {upvoteCount}
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+
+                      <Text style={styles.turnContent}>{item.content}</Text>
+                    </View>
+                  );
+                }}
+              />
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>
+                  Be the first to contribute
+                </Text>
+                <Text style={styles.emptyText}>
+                  This story hasn’t been continued yet.
+                </Text>
+              </View>
+            )}
           </View>
-        </Pressable>
-      </Modal>
-    </ScrollView>
-      </View>
+        </View>
+
+        {/* CHARACTER SELECT MODAL */}
+        <Modal visible={open} transparent animationType="fade">
+          <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
+            <View
+              style={[styles.menu, IS_WEB ? styles.menuWeb : styles.menuMobile]}
+            >
+              <FlatList
+                data={story.characters}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={styles.option}
+                    disabled={isSubmitting}
+                    onPress={() => {
+                      setCharacterId(item.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.name}</Text>
+                  </Pressable>
+                )}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -229,17 +283,40 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 22,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
     elevation: 8,
-    ...(IS_WEB && { boxShadow: "0 10px 25px rgba(0,0,0,0.08)" }),
+  },
+
+  feedback: {
+    margin: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  feedbackError: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+
+  feedbackSuccess: {
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+
+  feedbackText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0F172A",
+    textAlign: "center",
   },
 
   title: { fontSize: 26, fontWeight: "800", marginBottom: 12 },
-  content: { fontSize: 16, lineHeight: 26, color: "#334155", marginBottom: 28 },
+  content: { fontSize: 16, lineHeight: 26, marginBottom: 28 },
 
-  label: { fontSize: 14, fontWeight: "600", color: "#475569" },
+  label: { fontWeight: "600" },
 
   dropdown: {
     height: 54,
@@ -254,14 +331,12 @@ const styles = StyleSheet.create({
   dropdownText: { fontSize: 16 },
   placeholder: { color: "#94A3B8" },
 
-  sectionLabel: { fontSize: 15, fontWeight: "600", marginBottom: 10 },
+  sectionLabel: { fontWeight: "600", marginBottom: 10 },
 
   textarea: {
     minHeight: 150,
     borderRadius: 16,
     padding: 16,
-    fontSize: 16,
-    lineHeight: 24,
     borderWidth: 1,
     borderColor: "#CBD5E1",
   },
@@ -277,8 +352,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  primaryButtonDisabled: { backgroundColor: "#94A3B8" },
-  primaryButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+  primaryButtonDisabled: {
+    backgroundColor: "#94A3B8",
+    opacity: 0.7,
+  },
+
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
+  },
 
   turnsWrapper: { marginTop: 36 },
   turnsTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
@@ -286,7 +369,6 @@ const styles = StyleSheet.create({
   turnCard: {
     borderRadius: 16,
     padding: 16,
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     marginBottom: 14,
@@ -295,54 +377,33 @@ const styles = StyleSheet.create({
   turnHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 10,
-    flexWrap: "wrap",
   },
 
-  turnIdentity: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-
-  turnCharacter: { color: "#2563EB", fontWeight: "700", fontSize: 14 },
-  turnAuthor: { color: "#64748B", fontSize: 13 },
+  turnIdentity: { flexDirection: "row", gap: 8 },
+  turnCharacter: { fontWeight: "700", color: "#2563EB" },
+  turnAuthor: { color: "#64748B" },
 
   turnRight: { alignItems: "flex-end", gap: 6 },
-
   turnTime: { fontSize: 12, color: "#94A3B8" },
 
   upvoteButton: {
     flexDirection: "row",
-    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
   },
 
-  upvoteArrow: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#2563EB",
-  },
+  upvoteArrow: { fontWeight: "900", color: "#2563EB" },
+  upvoteCount: { fontWeight: "700", color: "#2563EB" },
 
-  upvoteCount: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2563EB",
-  },
-
-  turnContent: { fontSize: 15, lineHeight: 24, color: "#334155" },
+  turnContent: { lineHeight: 24 },
 
   emptyState: {
-    borderStyle: "dashed",
     borderWidth: 1,
+    borderStyle: "dashed",
     borderColor: "#CBD5E1",
     borderRadius: 16,
     padding: 24,
@@ -350,7 +411,7 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: { fontWeight: "700", marginBottom: 6 },
-  emptyText: { color: "#64748B", textAlign: "center", lineHeight: 22 },
+  emptyText: { color: "#64748B", textAlign: "center" },
 
   overlay: {
     flex: 1,
