@@ -6,6 +6,7 @@ export default function useTurnId() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [turn, setTurn] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
 
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
