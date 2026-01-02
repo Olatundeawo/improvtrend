@@ -9,6 +9,7 @@ import {
 import FeedSkeleton from "./FeedSkeleton";
 import { Story } from "./type";
 import formatTime from '../hooks/time'
+import { useState } from 'react'
 
 const FONT = {
   regular: "Inter_400Regular",
@@ -19,27 +20,30 @@ const FONT = {
 };
 
 
+
 type FeedListProps = {
   stories: Story[];
   onStoryPress: (id: string) => void;
   isLoading?: boolean;
+  onRetry?: () => void;
 };
 
 export default function FeedList({
   stories,
   onStoryPress,
-  isLoading = false
+  isLoading ,
+  onRetry,
 }: FeedListProps) {
   const { width } = useWindowDimensions();
   const isTabletOrWeb = width >= 768;
 
   if (isLoading) {
+    return <FeedSkeleton count={5} />;
   }
-  
+
   
   if (!isLoading && stories.length === 0) {
-    // return <EmptyFeed />;
-    return <FeedSkeleton count={5} />;
+    return <EmptyFeed onRetry={onRetry}/>;
   }
 
   
@@ -138,16 +142,26 @@ export default function FeedList({
     />
   );
 }
-function EmptyFeed() {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No stories to display.</Text>
-        <Text style={styles.emptySubText}>
-          Start a story or follow other writers to see their stories here.
-        </Text>
-      </View>
-    );
-  }
+function EmptyFeed({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptySubText}>
+        We couldn’t load stories. Please try again.
+      </Text>
+
+      {onRetry && (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => onRetry()}
+          style={styles.retryButton}
+        >
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
 
   const styles = StyleSheet.create({
     list: {
@@ -321,6 +335,20 @@ function EmptyFeed() {
       marginTop: 8,
       textAlign: "center",
     },
+    retryButton: {
+      marginTop: 20,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 999,
+      backgroundColor: "#4F46E5",
+    },
+    
+    retryText: {
+      color: "#FFFFFF",
+      fontSize: 14,
+      fontFamily: "Inter_600SemiBold",
+    },
+    
   });
   
 
