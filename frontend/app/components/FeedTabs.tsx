@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: IS_WEB ? 24 : 16,
     paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E5E7EB",
     gap: 12,
