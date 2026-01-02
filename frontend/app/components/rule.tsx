@@ -43,7 +43,7 @@ export default function Rules() {
         <Text style={styles.ruleTitle}>4. Upvoting Turns</Text>
         <Text style={styles.ruleText}>
           Upvotes help highlight quality contributions. You can upvote a turn
-          once. Upvotes cannot be reversed after submission.
+          once. You decide to reverse your upvote.
         </Text>
       </View>
 
