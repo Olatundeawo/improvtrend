@@ -46,7 +46,7 @@ export async function getTurnsByStoryId(storyId) {
         }
     },
     orderBy: {
-      createdAt: "asc", 
+      createdAt: "desc", 
     },
     
   });
