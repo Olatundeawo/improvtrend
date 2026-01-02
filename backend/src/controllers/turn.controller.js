@@ -9,6 +9,13 @@ export async function continueStory( req, res) {
         const turn = await addTurn(storyId, userId, characterId, content);
         res.status(201).json(turn)
     } catch (err) {
+        if (
+            err.message === "Story is not available." ||
+            err.message === "You cannot contribute twice in a row."
+        ) {
+
+            return res.status(400).json({ error: err.message })
+        }
         res.status(400).json({ error: err.message })
     }
 }
