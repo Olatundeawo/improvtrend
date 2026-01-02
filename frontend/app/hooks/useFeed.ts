@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Story } from "../components/type";
 
-export type FeedTabValue = "trending" | "newest" | "following";
+export type FeedTabValue = "trending" | "newest";
 
 export default function useFeed() {
   const [stories, setStories] = useState<Story[]>([]);
