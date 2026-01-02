@@ -27,6 +27,12 @@ export async function create(req, res) {
         const story = await createStory(userId, {title, content, characters});
         res.status(201).json(story)
     } catch ( err ) {
+        if( 
+            err.message === "Title cannot be more than 50 characters" ||
+            err.message === "You've passed the numbers of characters alllowed."
+        ) {
+            return res.status(400).json({error: err.message})
+        }
         res.status(400).json({ error: err.message })
     }
 }
