@@ -5,13 +5,18 @@ export async function continueStory( req, res) {
         const { storyId } = req.params;
         const { characterId, content } = req.body
         const userId = req.user.id;
+        const maxCont = 150
+        if ( content.length > maxCont) {
+            throw new Error("Allowed words is 150.")
+        }
 
         const turn = await addTurn(storyId, userId, characterId, content);
         res.status(201).json(turn)
     } catch (err) {
         if (
             err.message === "Story is not available." ||
-            err.message === "You cannot contribute twice in a row."
+            err.message === "You cannot contribute twice in a row." ||
+            err.message === "Allowed words is 150."
         ) {
 
             return res.status(400).json({ error: err.message })
