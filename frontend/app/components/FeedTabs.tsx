@@ -5,10 +5,11 @@ import {
   View,
   TouchableOpacity,
   Platform,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 
-type FeedTabValue = "trending" | "newest" | "following";
+type FeedTabValue = "trending" | "newest";
 
 interface FeedTabProps {
   value: FeedTabValue;
@@ -18,15 +19,19 @@ interface FeedTabProps {
 const TABS: { label: string; value: FeedTabValue }[] = [
   { label: "Trending", value: "trending" },
   { label: "Newest", value: "newest" },
-  { label: "Following", value: "following" },
+ 
 ];
+
+const { width } = Dimensions.get("window");
+const IS_WEB = Platform.OS === "web";
+const IS_SMALL_SCREEN = width < 380;
 
 export default function FeedTab({ value, onChange }: FeedTabProps) {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      {/* Left Tabs */}
+      {/* Tabs */}
       <View style={styles.tabsWrapper}>
         {TABS.map((tab) => {
           const active = tab.value === value;
@@ -35,11 +40,13 @@ export default function FeedTab({ value, onChange }: FeedTabProps) {
             <Pressable
               key={tab.value}
               onPress={() => onChange(tab.value)}
-              style={[styles.tab, active && styles.activeTab]}
+              style={({ pressed }) => [
+                styles.tab,
+                active && styles.activeTab,
+                pressed && styles.pressedTab,
+              ]}
             >
-              <Text
-                style={[styles.label, active && styles.activeLabel]}
-              >
+              <Text style={[styles.label, active && styles.activeLabel]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -47,39 +54,45 @@ export default function FeedTab({ value, onChange }: FeedTabProps) {
         })}
       </View>
 
-      {/* Right Create Button */}
+      {/* Create Button */}
       <TouchableOpacity
         activeOpacity={0.85}
         style={styles.createButton}
         onPress={() => router.push("/components/createStory")}
       >
-        <Text style={styles.createText}>Create Story</Text>
+        <Text style={styles.createText}>Create</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-const IS_WEB = Platform.OS === "web";
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: IS_WEB ? 24 : 16,
+    paddingVertical: 10,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E5E7EB",
+    gap: 12,
   },
 
   tabsWrapper: {
     flexDirection: "row",
     flex: 1,
-    gap: 20,
+    justifyContent: IS_WEB ? "flex-start" : "space-around",
+    alignItems: "center",
   },
 
   tab: {
     paddingVertical: 10,
+    paddingHorizontal: IS_SMALL_SCREEN ? 6 : 10,
+    alignItems: "center",
+  },
+
+  pressedTab: {
+    opacity: 0.7,
   },
 
   activeTab: {
@@ -88,7 +101,7 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 14,
+    fontSize: IS_SMALL_SCREEN ? 13 : 14,
     color: "#6B7280",
     fontWeight: "500",
   },
@@ -99,23 +112,27 @@ const styles = StyleSheet.create({
   },
 
   createButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: IS_SMALL_SCREEN ? 14 : 18,
+    paddingVertical: IS_SMALL_SCREEN ? 8 : 10,
     borderRadius: 999,
     backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+
     shadowColor: "#2563EB",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
 
     ...(IS_WEB && {
-      boxShadow: "0 6px 14px rgba(37,99,235,0.25)",
+      boxShadow: "0 6px 16px rgba(37,99,235,0.25)",
     }),
   },
 
   createText: {
-    fontSize: 13,
+    fontSize: IS_SMALL_SCREEN ? 12 : 13,
     fontWeight: "700",
     color: "#FFFFFF",
+    letterSpacing: 0.3,
   },
 });
