@@ -43,7 +43,16 @@ export async function loginUser({email, username, password}) {
     const user = await prisma.user.findFirst({
         where: {
             OR: [{email: email || undefined}, {username: username || undefined}]
-        }
+        },
+        include: {
+            stories: {
+                include: {
+                    turns: true
+                }
+            },
+            
+        },
+    
     })
 
     if (!user) {
@@ -71,7 +80,9 @@ export async function loginUser({email, username, password}) {
         user: {
             id: user.id,
             username: user.username,
-            email: user.email
+            email: user.email,
+            stories: user.stories,
+            createdAt: user.createdAt,
         }
     }
 }
