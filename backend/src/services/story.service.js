@@ -12,7 +12,7 @@ export async function createStory(userId, data) {
   }
 
   if (parsedCharacters.length > 5) {
-    throw new Error("You can create a maximum of 5 characters");
+    throw new Error("Characters exceed 5");
   }
 
   // prevent duplicates (case-insensitive)
