@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from 'react'
+import { useState } from 'react';
 
 export default function useTurn() {
   const { id } = useLocalSearchParams();
@@ -13,7 +13,7 @@ export default function useTurn() {
     characterId: string,
     content: string
   ) => {
-    setError(nul)
+    setError(null)
     setMessage(null)
     const token = await AsyncStorage.getItem("token");
 
@@ -36,6 +36,7 @@ export default function useTurn() {
 
       if (res.status === 201) {
         setMessage("Successfuly added your contribution.")
+        return true;
       }
     } catch (err: any) {
         if (axios.isAxiosError(err)) {
@@ -50,5 +51,5 @@ export default function useTurn() {
       }
   };
 
-  return { createTurn, error };
+  return { createTurn, error, message };
 }
