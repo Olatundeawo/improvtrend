@@ -1,16 +1,7 @@
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import FeedSkeleton from "./FeedSkeleton";
-import { Story } from "./type";
-import formatTime from '../hooks/time'
-import { useState } from 'react'
-import { RefreshControl } from "react-native";
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native"
+import formatTime from "../hooks/time"
+import FeedSkeleton from "./FeedSkeleton"
+import type { Story } from "./type"
 
 const FONT = {
   regular: "Inter_400Regular",
@@ -18,41 +9,45 @@ const FONT = {
   semibold: "Inter_600SemiBold",
   bold: "Inter_700Bold",
   title: "PlayfairDisplay_600SemiBold",
-};
+}
 
-
+const COLORS = {
+  primary: "#1E3A8A", // Dark blue from logo
+  accent: "#F97316", // Orange from logo
+  accentLight: "#FFF7ED", // Light orange background
+  blue: "#3B82F6", // Bright blue
+  blueLight: "#EFF6FF", // Light blue background
+  text: {
+    primary: "#111827",
+    secondary: "#6B7280",
+    tertiary: "#9CA3AF",
+  },
+  border: "#E5E7EB",
+  background: "#FFFFFF",
+  surface: "#F9FAFB",
+}
 
 type FeedListProps = {
-  stories: Story[];
-  onStoryPress: (id: string) => void;
-  isLoading?: boolean;
-  refreshing?: boolean;
-  onRetry?: () => void;
-  onRefresh?: () => void;
-  
-};
+  stories: Story[]
+  onStoryPress: (id: string) => void
+  isLoading?: boolean
+  refreshing?: boolean
+  onRetry?: () => void
+  onRefresh?: () => void
+}
 
-export default function FeedList({
-  stories,
-  onStoryPress,
-  isLoading ,
-  onRetry,
-  refreshing,
-  onRefresh,
-}: FeedListProps) {
-  const { width } = useWindowDimensions();
-  const isTabletOrWeb = width >= 768;
+export default function FeedList({ stories, onStoryPress, isLoading, onRetry, refreshing, onRefresh }: FeedListProps) {
+  const { width } = useWindowDimensions()
+  const isTabletOrWeb = width >= 768
 
   if (isLoading) {
-    return <FeedSkeleton count={5} />;
+    return <FeedSkeleton count={5} />
   }
 
-  
   if (!isLoading && stories.length === 0) {
-    return <EmptyFeed onRetry={onRetry}/>;
+    return <EmptyFeed onRetry={onRetry} />
   }
 
-  
   return (
     <FlatList
       data={stories}
@@ -63,37 +58,26 @@ export default function FeedList({
           <RefreshControl
             refreshing={!!refreshing}
             onRefresh={onRefresh}
-            tintColor="#4F46E5"
-            colors={["#4F46E5"]}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent, COLORS.primary]}
           />
         ) : undefined
       }
-      contentContainerStyle={[
-        styles.list,
-        isTabletOrWeb && styles.listWide,
-      ]}
+      contentContainerStyle={[styles.list, isTabletOrWeb && styles.listWide]}
       renderItem={({ item }) => (
-        <View
-          style={[
-            styles.card,
-            isTabletOrWeb && styles.cardWide,
-          ]}
-        >
+        <View style={[styles.card, isTabletOrWeb && styles.cardWide]}>
           <View style={styles.header}>
-            <View>
-              <Text style={styles.username}>
-                {item.user.username}
-              </Text>
-              <Text style={styles.time}>
-                {formatTime(item.createdAt)}
-              </Text>
+            <View style={styles.userInfo}>
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{item.user.username.charAt(0).toUpperCase()}</Text>
+              </View>
+              <View>
+                <Text style={styles.username}>{item.user.username}</Text>
+                <Text style={styles.time}>{formatTime(item.createdAt)}</Text>
+              </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.openButton}
-              onPress={() => onStoryPress(item.id)}
-              activeOpacity={0.85}
-            >
+            <TouchableOpacity style={styles.openButton} onPress={() => onStoryPress(item.id)} activeOpacity={0.85}>
               <Text style={styles.openText}>Open</Text>
             </TouchableOpacity>
           </View>
@@ -112,9 +96,7 @@ export default function FeedList({
             <View style={styles.charactersWrapper}>
               {item.characters.map((char) => (
                 <View key={char.id} style={styles.characterChip}>
-                  <Text style={styles.characterText}>
-                    {char.name}
-                  </Text>
+                  <Text style={styles.characterText}>{char.name}</Text>
                 </View>
               ))}
             </View>
@@ -125,246 +107,258 @@ export default function FeedList({
           <View style={styles.engagementRow}>
             <View style={styles.engagementGroup}>
               <View style={styles.engagementItem}>
-                <Text style={styles.engagementCount}>
-                  {item.comments?.length ?? 0}
-                </Text>
-                <Text style={styles.engagementLabel}>
-                  {(item.comments?.length ?? 0) <=1 ? "Comment" : "Comments"}
-                  
-                </Text>
+                <Text style={styles.engagementCount}>{item.comments?.length ?? 0}</Text>
+                <Text style={styles.engagementLabel}>{(item.comments?.length ?? 0) <= 1 ? "Comment" : "Comments"}</Text>
               </View>
 
               <View style={styles.engagementItem}>
-                <Text style={styles.engagementCount}>
-                  {item.turns?.length ?? 0}
-                </Text>
+                <Text style={styles.engagementCount}>{item.turns?.length ?? 0}</Text>
                 <Text style={styles.engagementLabel}>
-                {(item.turns?.length ?? 0) <= 1 ? "Contribution" : "Contributions"}
-                  
+                  {(item.turns?.length ?? 0) <= 1 ? "Contribution" : "Contributions"}
                 </Text>
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={() => onStoryPress(item.id)}
-              activeOpacity={0.9}
-            >
+            <TouchableOpacity style={styles.ctaButton} onPress={() => onStoryPress(item.id)} activeOpacity={0.9}>
               <Text style={styles.ctaText}>Contribute</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
     />
-  );
+  )
 }
+
 function EmptyFeed({ onRetry }: { onRetry?: () => void }) {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptySubText}>
-        We couldn’t load stories. Please try again.
-      </Text>
+      <Text style={styles.emptySubText}>We couldn't load stories. Please try again.</Text>
 
       {onRetry && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => onRetry()}
-          style={styles.retryButton}
-        >
+        <TouchableOpacity activeOpacity={0.85} onPress={() => onRetry()} style={styles.retryButton}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       )}
     </View>
-  );
+  )
 }
 
+const styles = StyleSheet.create({
+  list: {
+    paddingVertical: 8,
+  },
 
-  const styles = StyleSheet.create({
-    list: {
-      paddingVertical: 8,
-    },
-  
-    listWide: {
-      paddingHorizontal: 24,
-    },
-  
-    card: {
-      backgroundColor: "#FFFFFF",
-      padding: 16,
-      marginHorizontal: 12,
-      marginVertical: 6,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: "#E5E7EB",
-    },
-  
-    cardWide: {
-      maxWidth: 720,
-      alignSelf: "center",
-      width: "100%",
-    },
-  
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-    },
-  
-    /** ─── META ─── */
-    username: {
-      fontSize: 13,
-      fontFamily: FONT.semibold,
-      color: "#111827",
-    },
-  
-    time: {
-      fontSize: 11,
-      fontFamily: FONT.regular,
-      color: "#6B7280",
-      marginTop: 2,
-    },
-  
-    /** ─── ACTIONS ─── */
-    openButton: {
-      paddingHorizontal: 14,
-      paddingVertical: 6,
-      borderRadius: 999,
-      backgroundColor: "#EEF2FF",
-    },
-  
-    openText: {
-      fontSize: 13,
-      fontFamily: FONT.semibold,
-      color: "#4F46E5",
-    },
-  
-    /** ─── STORY ─── */
-    title: {
-      fontSize: 18,
-      fontFamily: FONT.title,
-      color: "#111827",
-      marginBottom: 6,
-      lineHeight: 24,
-    },
-  
-    content: {
-      fontSize: 14,
-      fontFamily: FONT.regular,
-      color: "#374151",
-      lineHeight: 22,
-      marginBottom: 12,
-    },
-  
-    /** ─── CHARACTERS ─── */
-    charactersWrapper: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 8,
-    },
-  
-    characterChip: {
-      backgroundColor: "#F3F4F6",
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: "#E5E7EB",
-    },
-  
-    characterText: {
-      fontSize: 12,
-      fontFamily: FONT.medium,
-      color: "#374151",
-    },
-  
-    divider: {
-      height: 1,
-      backgroundColor: "#E5E7EB",
-      marginVertical: 14,
-    },
-  
-    /** ─── ENGAGEMENT ─── */
-    engagementRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: 12,
-    },
-  
-    engagementGroup: {
-      flexDirection: "row",
-      gap: 20,
-    },
-  
-    engagementItem: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-  
-    engagementCount: {
-      fontSize: 13,
-      fontFamily: FONT.semibold,
-      color: "#111827",
-      marginRight: 4,
-    },
-  
-    engagementLabel: {
-      fontSize: 12,
-      fontFamily: FONT.regular,
-      color: "#6B7280",
-    },
-  
-    /** ─── CTA ─── */
-    ctaButton: {
-      backgroundColor: "#4F46E5",
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 10,
-    },
-  
-    ctaText: {
-      color: "#FFFFFF",
-      fontSize: 13,
-      fontFamily: FONT.semibold,
-    },
-  
-    /** ─── EMPTY ─── */
-    emptyContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 60,
-      paddingHorizontal: 24,
-    },
-  
-    emptyText: {
-      fontSize: 16,
-      fontFamily: FONT.semibold,
-      color: "#111827",
-      textAlign: "center",
-    },
-  
-    emptySubText: {
-      fontSize: 14,
-      fontFamily: FONT.regular,
-      color: "#6B7280",
-      marginTop: 8,
-      textAlign: "center",
-    },
-    retryButton: {
-      marginTop: 20,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 999,
-      backgroundColor: "#4F46E5",
-    },
-    
-    retryText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontFamily: "Inter_600SemiBold",
-    },
-    
-  });
-  
+  listWide: {
+    paddingHorizontal: 24,
+  },
 
+  card: {
+    backgroundColor: COLORS.background,
+    padding: 18,
+    marginHorizontal: 12,
+    marginVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  cardWide: {
+    maxWidth: 720,
+    alignSelf: "center",
+    width: "100%",
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  avatarText: {
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    color: COLORS.background,
+  },
+
+  /** ─── META ─── */
+  username: {
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    color: COLORS.text.primary,
+  },
+
+  time: {
+    fontSize: 11,
+    fontFamily: FONT.regular,
+    color: COLORS.text.secondary,
+    marginTop: 2,
+  },
+
+  /** ─── ACTIONS ─── */
+  openButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: COLORS.blueLight,
+    borderWidth: 1,
+    borderColor: COLORS.blue + "20",
+  },
+
+  openText: {
+    fontSize: 13,
+    fontFamily: FONT.semibold,
+    color: COLORS.blue,
+  },
+
+  /** ─── STORY ─── */
+  title: {
+    fontSize: 19,
+    fontFamily: FONT.title,
+    color: COLORS.primary,
+    marginBottom: 8,
+    lineHeight: 26,
+  },
+
+  content: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: COLORS.text.secondary,
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+
+  /** ─── CHARACTERS ─── */
+  charactersWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  characterChip: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+
+  characterText: {
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    color: COLORS.text.secondary,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 14,
+  },
+
+  /** ─── ENGAGEMENT ─── */
+  engagementRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+
+  engagementGroup: {
+    flexDirection: "row",
+    gap: 24,
+  },
+
+  engagementItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  engagementCount: {
+    fontSize: 14,
+    fontFamily: FONT.bold,
+    color: COLORS.primary,
+    marginRight: 4,
+  },
+
+  engagementLabel: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: COLORS.text.secondary,
+  },
+
+  /** ─── CTA ─── */
+  ctaButton: {
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  ctaText: {
+    color: COLORS.background,
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+  },
+
+  /** ─── EMPTY ─── */
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 60,
+    paddingHorizontal: 24,
+  },
+
+  emptySubText: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: COLORS.text.secondary,
+    marginTop: 8,
+    textAlign: "center",
+  },
+
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: COLORS.accent,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  retryText: {
+    color: COLORS.background,
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+  },
+})
