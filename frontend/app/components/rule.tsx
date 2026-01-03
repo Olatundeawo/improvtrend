@@ -1,58 +1,53 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function Rules() {
+export default function Rules({ onClose }: { onClose: () => void }) {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>How to Use the App</Text>
-      <Text style={styles.subtitle}>
-        Follow these guidelines to get the best experience.
-      </Text>
-
-      {/* Rule 1 */}
-      <View style={styles.card}>
-        <Text style={styles.ruleTitle}>1. Browsing Stories</Text>
-        <Text style={styles.ruleText}>
-          The Feed displays all available stories. Scroll through the Feed and
-          tap on any story to view its details and contributions. Only active and
-          published stories appear in the Feed.
+    <View style={styles.wrapper}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>How to Use the App</Text>
+        <Text style={styles.subtitle}>
+          Follow these guidelines to get the best experience.
         </Text>
-      </View>
 
-      {/* Rule 2 */}
-      <View style={styles.card}>
-        <Text style={styles.ruleTitle}>2. Creating a Turn</Text>
-        <Text style={styles.ruleText}>
-          A Turn is a contribution that continues a story. Open a story from the
-          Feed, select a character, and submit content that naturally continues
-          the story. Turns appear in chronological order.
-        </Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.ruleTitle}>1. Browsing Stories</Text>
+          <Text style={styles.ruleText}>
+            Browse the Feed and tap any story to view its details and
+            contributions.
+          </Text>
+        </View>
 
-      {/* Rule 3 */}
-      <View style={styles.card}>
-        <Text style={styles.ruleTitle}>3. Using Characters</Text>
-        <Text style={styles.ruleText}>
-          Each story contains predefined characters. You must select one
-          character per turn. Characters represent unique voices and cannot be
-          duplicated within the same turn.
-        </Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.ruleTitle}>2. Creating a Turn</Text>
+          <Text style={styles.ruleText}>
+            Open a story, select a character, and submit content that continues
+            the story naturally.
+          </Text>
+        </View>
 
-      {/* Rule 4 */}
-      <View style={styles.card}>
-        <Text style={styles.ruleTitle}>4. Upvoting Turns</Text>
-        <Text style={styles.ruleText}>
-          Upvotes help highlight quality contributions. You can upvote a turn
-          once. You decide to reverse your upvote.
-        </Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.ruleTitle}>3. Using Characters</Text>
+          <Text style={styles.ruleText}>
+            Each turn requires one character. Characters represent unique
+            voices.
+          </Text>
+        </View>
 
-      <Text style={styles.footer}>
-        Collaborative storytelling works best when everyone follows these rules.
-      </Text>
-    </ScrollView>
+        <View style={styles.card}>
+          <Text style={styles.ruleTitle}>4. Upvoting Turns</Text>
+          <Text style={styles.ruleText}>
+            You can upvote a turn once to highlight quality contributions.
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeText}>Got it</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -104,4 +99,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#9CA3AF",
   },
+  wrapper: {
+    flex: 1,
+    maxHeight: "100%",
+  },
+  
+  closeButton: {
+    marginTop: 16,
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  
+  closeText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  
 });
