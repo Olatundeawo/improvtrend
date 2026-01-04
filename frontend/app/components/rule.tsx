@@ -40,6 +40,13 @@ export default function Rules({ onClose }: { onClose: () => void }) {
           </Text>
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.ruleTitle}>5. Got story to share?</Text>
+          <Text style={styles.ruleText}>
+            Click on create at the top right corner in the feed section to share one.
+          </Text>
+        </View>
+
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeText}>Got it</Text>
         </TouchableOpacity>
