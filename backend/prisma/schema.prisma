@@ -47,13 +47,13 @@ model Story {
 
 model Character {
   id             Int          @id @default(autoincrement())
-  name           String       @unique
+  name           String       
   storyId        String
 
   turns          Turn[]
   story          Story        @relation(fields: [storyId], references: [id])
 
-  @@unique([storyId, name])
+
 }
 
 model Turn {
