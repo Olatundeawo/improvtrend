@@ -1,9 +1,11 @@
 import axios from "axios";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Story } from "../components/type";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Story } from "../components/type";
 
 export type FeedTabValue = "trending" | "newest";
+
+const LIMIT = 2;
 
 export default function useFeed() {
   const router = useRouter();
@@ -13,65 +15,74 @@ export default function useFeed() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const [loading, setLoading] = useState(false);      
-  const [refreshing, setRefreshing] = useState(false); 
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [activeTab, setActiveTab] = useState<FeedTabValue>("trending");
 
+  const didInitialLoad = useRef(false);
+
   
-  const fetchStories = async (reset = false) => {
-    // Prevent double calls
-    if ((loading || refreshing) && !reset) return;
-    if (!hasMore && !reset) return;
+  const fetchMore = async () => {
+    if (loading || refreshing || !hasMore) return;
 
-    reset ? setRefreshing(true) : setLoading(true);
-
+    setLoading(true);
     try {
       const res = await axios.get(`${URL}stories`, {
         params: {
-          page: reset ? 1 : page,
-          limit: 10,
+          page,
+          limit: LIMIT,
         },
       });
 
       const { data, pagination } = res.data;
 
-      setStories((prev) =>
-        reset ? data : [...prev, ...data]
-      );
-
+      setStories((prev) => [...prev, ...data]);
       setHasMore(pagination?.hasMore ?? false);
-      setPage(reset ? 2 : page + 1);
+      setPage((p) => p + 1);
     } catch (err) {
-      console.error("Fetch stories error:", err);
+      console.error("Fetch more error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  
+  const refreshFeed = async () => {
+    if (refreshing) return;
+
+    setRefreshing(true);
+    try {
+      const res = await axios.get(`${URL}stories`, {
+        params: {
+          page: 1,
+          limit: LIMIT,
+        },
+      });
+
+      const { data, pagination } = res.data;
+
+      setStories(data);
+      setHasMore(pagination?.hasMore ?? false);
+      setPage(2);
+    } catch (err) {
+      console.error("Refresh feed error:", err);
+    } finally {
       setRefreshing(false);
     }
   };
 
- 
-  const refreshFeed = async () => {
-    setHasMore(true);
-    setPage(1);
-    await fetchStories(true);
-  };
 
- 
   useEffect(() => {
+    didInitialLoad.current = false;
     refreshFeed();
   }, [activeTab]);
 
-  
-  useEffect(() => {
-    refreshFeed();
-  }, []);
-
-  
-  const filteredStories = useMemo(() => {
+ 
+  const sortedStories = useMemo(() => {
     if (activeTab === "trending") {
       return [...stories].sort(
-        (a, b) => b.turns.length - a.turns.length
+        (a, b) => (b.turns?.length ?? 0) - (a.turns?.length ?? 0)
       );
     }
 
@@ -88,16 +99,16 @@ export default function useFeed() {
 
   
   const handleStoryId = (id: string) => {
-    router.push(`(tabs)/story?id=${id}`);
+    router.push(`components/StoryId?id=${id}`);
   };
 
   return {
-    stories: filteredStories,
+    stories: sortedStories,
     activeTab,
     setActiveTab,
 
-    loadMore: fetchStories,   
-    refreshFeed,              
+    fetchMore,
+    refreshFeed,
 
     loading,
     refreshing,
