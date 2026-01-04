@@ -5,113 +5,119 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform, StyleSheet,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
-
+import { useAuth } from "../context/auth";
 
 export default function Login() {
   const [form, setForm] = useState({
     identifier: "",
     password: "",
   });
-  const [loading, setLoading] = useState<boolean>(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+
+  const { login } = useAuth();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const router = useRouter();
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
-  
+
   type Form = {
     identifier: string;
     password: string;
   };
-  
-  const handleChanges = <K extends keyof Form>(
-    field: K,
-    value: Form[K]
-  ) => {
+
+  const handleChanges = <K extends keyof Form>(field: K, value: Form[K]) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
-  
+
   const submit = async () => {
     if (!URL) return;
-    if (loading) return
-    setLoading(true)
-    setError(null)
-    setMessage(null)
-    if(!form.identifier || !form.password) {
-      setError("Missing Credential")
-      setLoading(false)
+    if (loading) return;
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    if (!form.identifier || !form.password) {
+      setError("Missing Credential");
+      setLoading(false);
       return;
     }
-    
-    const isEmail = form.identifier.includes("@")
-    
+
+    const isEmail = form.identifier.includes("@");
+
     const payload = {
       password: form.password,
-      ...(isEmail ? {
-        email: form.identifier.trim().toLowerCase()
-      }: {username: form.identifier.trim()})
-    }
-    
+      ...(isEmail
+        ? { email: form.identifier.trim().toLowerCase() }
+        : { username: form.identifier.trim() }),
+    };
+
     try {
       const response = await axios.post(`${URL}auth/login/`, payload);
-      
+
       if (response.status !== 200) return;
 
-      setMessage("Login Successfully")
-      
+      setMessage("Login Successfully");
+      await AsyncStorage.setItem("hasSeenRules", "false");
+
+      await login({
+        id: response.data.user.id,
+        username: response.data.user.username,
+        token: response.data.token,
+        stories: response.data.user.stories,
+        email: response.data.user.email,
+        createdAt: response.data.user.createdAt,
+      });
+
       if (response.data?.token) {
         await AsyncStorage.setItem("token", response.data.token);
       }
 
-      router.replace("/")
-      
       setForm({ identifier: "", password: "" });
-      
+      router.replace("/");
     } catch (error: any) {
       if (error.response) {
-        setError(
-          error.response?.data?.error || "Retry, network error."
-        );
+        setError(error.response?.data?.error || "Retry, network error.");
       } else {
-        setError("Network Error, Check your connection.")
+        setError("Network Error, Check your connection.");
       }
     } finally {
-        setLoading(false)
+      setLoading(false);
     }
   };
 
-  useEffect(()=> {
-    if (!error && !message) return
-  
-    const clear = setTimeout(()=> {
-      setError(null)
-      setMessage(null)
+  useEffect(() => {
+    if (!error && !message) return;
+
+    const clear = setTimeout(() => {
+      setError(null);
+      setMessage(null);
     }, 5000);
 
-    return () => clearTimeout(clear)
-  }, [error, message])
+    return () => clearTimeout(clear);
+  }, [error, message]);
 
   return (
     <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    keyboardVerticalOffset={Platform.OS === "android" ? 50 : 0}
-    
-  >
-    
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your account</Text>
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 50 : 0}
+    >
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Log in to your account</Text>
 
           {error && (
             <View style={styles.errorBox}>
@@ -121,76 +127,73 @@ export default function Login() {
 
           {message && (
             <View style={styles.successBox}>
-              <Text style={styles.successText}>
-                {message}
-              </Text>
+              <Text style={styles.successText}>{message}</Text>
             </View>
           )}
-        <View style={styles.field}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            value={form.identifier}
-            onChangeText={(text) => handleChanges("identifier", text)}
-            placeholder="you@example.com or username"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-        </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
-          <TextInput
-            value={form.password}
-            onChangeText={(text) => handleChanges("password", text)}
-            placeholder="•••"
-            secureTextEntry= {!showPassword}
-            style={[styles.input, {flex: 1}]}
-          />
-          <TouchableOpacity 
-          onPress={() => setShowPassword(!showPassword)}
-          style={styles.showButton}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              value={form.identifier}
+              onChangeText={(text) => handleChanges("identifier", text)}
+              placeholder="you@example.com or username"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.input}
+              editable={!loading}
+            />
+          </View>
 
-            <Text style={styles.showButtonText}>
-              {showPassword ? "Hide" : "Show"}
-            </Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>Password</Text>
 
+            <View style={styles.passwordContainer}>
+              <TextInput
+                value={form.password}
+                onChangeText={(text) => handleChanges("password", text)}
+                placeholder="•••"
+                secureTextEntry={!showPassword}
+                style={[styles.input, { flex: 1 }]}
+                returnKeyType="done"
+                onSubmitEditing={submit}
+                editable={!loading}
+              />
+
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.showButton}
+              >
+                <Text style={styles.showButtonText}>
+                  {showPassword ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={submit}
+            activeOpacity={0.8}
+            style={[styles.button, loading && styles.buttonDisabled]}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don’t have an account?</Text>
+            <Link href="(auth)/register" asChild>
+              <Text style={styles.link}> Sign up</Text>
+            </Link>
           </View>
         </View>
-
-        <TouchableOpacity
-          onPress={submit}
-          activeOpacity={0.8}
-          style={[styles.button,
-            loading && styles.buttonDisabled
-          ]}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#ffffff" />
-          ): (
-
-          <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Don’t have an account?
-          </Text>
-          <Link href="(auth)/register" asChild>
-            <Text style={styles.link}> Sign up</Text>
-          </Link>
-        </View>
       </View>
-    </View>
-  </KeyboardAvoidingView>
+    </KeyboardAvoidingView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -203,7 +206,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "100%",
-    maxWidth: 420, 
+    maxWidth: 420,
     backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 24,
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3, 
+    elevation: 3,
   },
 
   title: {
@@ -293,16 +296,15 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 0,
     backgroundColor: "#ffffff",
   },
-  
+
   showButton: {
     paddingHorizontal: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  
+
   showButtonText: {
     color: "#2563eb",
     fontWeight: "500",
@@ -314,30 +316,30 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: "#f0fdf4", 
+    backgroundColor: "#f0fdf4",
     borderWidth: 1,
     borderColor: "#bbf7d0",
   },
-  
+
   successText: {
-    color: "#166534", 
+    color: "#166534",
     fontSize: 14,
     textAlign: "center",
   },
 
   errorBox: {
-  marginTop: 16,
-  paddingVertical: 10,
-  paddingHorizontal: 14,
-  borderRadius: 12,
-  backgroundColor: "#fef2f2", 
-  borderWidth: 1,
-  borderColor: "#fecaca", 
-},
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
 
-errorText: {
-  color: "#b91c1c", 
-  fontSize: 14,
-  textAlign: "center",
-},
+  errorText: {
+    color: "#b91c1c",
+    fontSize: 14,
+    textAlign: "center",
+  },
 });
