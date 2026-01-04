@@ -12,11 +12,11 @@ const FONT = {
 }
 
 const COLORS = {
-  primary: "#1E3A8A", // Dark blue from logo
-  accent: "#F97316", // Orange from logo
-  accentLight: "#FFF7ED", // Light orange background
-  blue: "#3B82F6", // Bright blue
-  blueLight: "#EFF6FF", // Light blue background
+  primary: "#1E3A8A", 
+  accent: "#F97316", 
+  accentLight: "#FFF7ED", 
+  blue: "#3B82F6", 
+  blueLight: "#EFF6FF", 
   text: {
     primary: "#111827",
     secondary: "#6B7280",
@@ -34,13 +34,16 @@ type FeedListProps = {
   refreshing?: boolean
   onRetry?: () => void
   onRefresh?: () => void
+  onEndReached?: () => void
+  hasMore?: boolean
 }
 
-export default function FeedList({ stories, onStoryPress, isLoading, onRetry, refreshing, onRefresh }: FeedListProps) {
+
+export default function FeedList({ stories, onStoryPress, isLoading, onRetry, refreshing, onRefresh, onEndReached, hasMore }: FeedListProps) {
   const { width } = useWindowDimensions()
   const isTabletOrWeb = width >= 768
 
-  if (isLoading) {
+  if (isLoading && stories.length === 0) {
     return <FeedSkeleton count={5} />
   }
 
@@ -50,13 +53,29 @@ export default function FeedList({ stories, onStoryPress, isLoading, onRetry, re
 
   return (
     <FlatList
-      data={stories}
-      keyExtractor={(item) => item.id}
-      showsVerticalScrollIndicator={false}
+    data={stories}
+    keyExtractor={(item) => item.id}
+    showsVerticalScrollIndicator={false}
+  
+    onEndReached={() => {
+      if (!hasMore || isLoading || refreshing) return;
+      onEndReached();
+    }}
+    onEndReachedThreshold={0.7}
+  
+    ListFooterComponent={
+      hasMore ? (
+        <View style={{ paddingVertical: 20 }}>
+          <Text style={{ textAlign: "center", color: "#6B7280" }}>
+            Loading more stories...
+          </Text>
+        </View>
+      ) : null
+    }
       refreshControl={
         onRefresh ? (
           <RefreshControl
-            refreshing={!!refreshing}
+            refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={COLORS.accent}
             colors={[COLORS.accent, COLORS.primary]}
