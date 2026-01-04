@@ -1,11 +1,35 @@
-import { Tabs } from "expo-router";
-import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import FeedHeader from "../components/FeedHeader"
+import { Redirect, Tabs } from "expo-router";
+import { ActivityIndicator, Platform, View } from "react-native";
+import FeedHeader from "../components/FeedHeader";
+import { useAuth } from "../context/auth";
 
 const IS_WEB = Platform.OS === "web";
 
 export default function TabLayout() {
+  const { user, loading } = useAuth();
+
+  // ⏳ While restoring auth state
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // 🔒 Not logged in → redirect
+  if (!user) {
+    return <Redirect href="(auth)/login" />;
+  }
+
+  // ✅ Logged in → show tabs
   return (
     <Tabs
       screenOptions={{
