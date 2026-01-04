@@ -3,15 +3,16 @@ import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { useEffect, useRef, useState } from "react"
 import {
-    Dimensions,
-    FlatList,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Dimensions,
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Modal,
 } from "react-native"
 
 import FeedHeader from "../components/FeedHeader"
@@ -43,6 +44,7 @@ export default function StoryScreen() {
   const [text, setText] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  
   const [feedback, setFeedback] = useState<{
     type: "error" | "success"
     text: string
@@ -155,6 +157,10 @@ export default function StoryScreen() {
                   await refresh()
                   setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)
                 }
+                if(! created) {
+                  setText("")
+                  setCharacterId(null)
+                }
               } finally {
                 setIsSubmitting(false)
               }
@@ -209,6 +215,30 @@ export default function StoryScreen() {
             )}
           </View>
         </View>
+        <Modal visible={open} transparent animationType="fade">
+          <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
+            <View
+              style={[styles.menu, IS_WEB ? styles.menuWeb : styles.menuMobile]}
+            >
+              <FlatList
+                data={story.characters}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={styles.option}
+                    disabled={isSubmitting}
+                    onPress={() => {
+                      setCharacterId(item.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.name}</Text>
+                  </Pressable>
+                )}
+              />
+            </View>
+          </Pressable>
+        </Modal>
       </ScrollView>
     </View>
   )
