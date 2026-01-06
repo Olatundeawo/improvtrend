@@ -75,7 +75,6 @@ export default function Login() {
         id: response.data.user.id,
         username: response.data.user.username,
         token: response.data.token,
-        stories: response.data.user.stories,
         email: response.data.user.email,
         createdAt: response.data.user.createdAt,
       });
