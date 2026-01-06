@@ -1,19 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
-import { Story } from "../components/type";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 type User = {
   id: string;
   username: string;
+  email: string;
   token: string;
-  email:string;
-  createdAt: string,
-  stories: Story[],
+  createdAt: string;
 };
 
 type AuthContextType = {
@@ -29,21 +22,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /** Restore session on app start */
   useEffect(() => {
     const restoreUser = async () => {
       try {
         const stored = await AsyncStorage.getItem("user");
-        if (stored) {
-          setUser(JSON.parse(stored));
-        }
-      } catch (e) {
-        console.error("Failed to restore user", e);
+        if (stored) setUser(JSON.parse(stored));
       } finally {
         setLoading(false);
       }
     };
-
     restoreUser();
   }, []);
 
@@ -58,24 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-/** Safe hook */
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
