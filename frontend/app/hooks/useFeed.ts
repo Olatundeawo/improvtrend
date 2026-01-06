@@ -164,7 +164,7 @@ export default function useFeed() {
     loading,
     refreshing,
     hasMore,
-    error
+    error,
 
     showNewStoriesBanner,
     newStoriesCount: newStories.length,
