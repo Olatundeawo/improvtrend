@@ -30,7 +30,7 @@ const MAX_WIDTH = 720
 export default function StoryScreen() {
   const router = useRouter()
 
-  const { story, loading } = useStoryId()
+  const { story, loading, retry } = useStoryId()
   const { turn, refresh } = useTurnId()
   const { createTurn, error, message } = useTurn()
 
@@ -63,7 +63,7 @@ export default function StoryScreen() {
   }, [error, message])
 
   if (loading) return <FeedSkeleton count={5} />
-  if (!story) return <Text style={styles.stateText}>Story not found</Text>
+  if (!story) return <Pressable onPress={retry}><Text>Retry</Text></Pressable>
 
   const selectedCharacter = story.characters.find((c) => c.id === characterId)
   const canSubmit = Boolean(selectedCharacter && text.trim() && !isSubmitting)
