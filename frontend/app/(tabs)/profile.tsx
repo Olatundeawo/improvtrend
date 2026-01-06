@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -8,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/auth";
+import useUserStories from "../hooks/useUserStories";
 
 function formatJoinedDate(dateString?: string) {
   if (!dateString) return null;
@@ -21,9 +23,9 @@ function formatJoinedDate(dateString?: string) {
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const { stories } = useUserStories();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  console.log(user)
 
   if (!user) return null;
 
@@ -37,31 +39,19 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.card,
-          isLargeScreen && styles.cardLarge,
-        ]}
-      >
-        {/* Top Row */}
+      <View style={[styles.card, isLargeScreen && styles.cardLarge]}>
+        {/* Header */}
         <View style={styles.topRow}>
-          {/* Avatar */}
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {user.username.charAt(0).toUpperCase()}
             </Text>
           </View>
 
-          {/* Info */}
           <View style={styles.info}>
-            <Text style={styles.username}>
-              {user.username}
-            </Text>
-
+            <Text style={styles.username}>{user.username}</Text>
             {joinedDate && (
-              <Text style={styles.joined}>
-                Joined {joinedDate}
-              </Text>
+              <Text style={styles.joined}>Joined {joinedDate}</Text>
             )}
           </View>
         </View>
@@ -70,20 +60,33 @@ export default function Profile() {
         <View style={styles.stats}>
           <View style={styles.stat}>
             <Text style={styles.statNumber}>
-              {user.stories?.length || 0}
+              {stories?.length || 0}
             </Text>
             <Text style={styles.statLabel}>Stories</Text>
           </View>
         </View>
 
-        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Rules */}
+        <Pressable
+          onPress={() => router.push("/components/rule")}
+          style={({ pressed }) => [
+            styles.ruleRow,
+            pressed && styles.ruleRowPressed,
+          ]}
+        >
+          <Text style={styles.ruleText}>Engagement rules</Text>
+          <Text style={styles.ruleArrow}>›</Text>
+        </Pressable>
+
         <View style={styles.divider} />
 
         {/* Logout */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
@@ -92,18 +95,17 @@ export default function Profile() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#f8fafc",
     paddingHorizontal: 16,
     paddingTop: 24,
   },
 
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 20,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -116,6 +118,7 @@ const styles = StyleSheet.create({
     padding: 28,
   },
 
+  /* ---------- HEADER ---------- */
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -132,8 +135,8 @@ const styles = StyleSheet.create({
 
   avatarText: {
     color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "600",
+    fontSize: 30,
+    fontWeight: "700",
   },
 
   info: {
@@ -142,56 +145,82 @@ const styles = StyleSheet.create({
   },
 
   username: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "700",
     color: "#0f172a",
   },
 
   joined: {
+    fontSize: 14,
+    color: "#64748b",
+    marginTop: 4,
+  },
+
+  /* ---------- STATS ---------- */
+  stats: {
+    flexDirection: "row",
+    marginTop: 24,
+  },
+
+  stat: {
+    marginRight: 32,
+  },
+
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+
+  statLabel: {
     fontSize: 13,
     color: "#64748b",
     marginTop: 4,
   },
 
-  stats: {
+  /* ---------- RULE ROW ---------- */
+  ruleRow: {
     flexDirection: "row",
-    marginTop: 20,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
   },
 
-  stat: {
-    marginRight: 24,
+  ruleRowPressed: {
+    opacity: 0.6,
   },
 
-  statNumber: {
-    fontSize: 18,
+  ruleText: {
+    fontSize: 15,
     fontWeight: "600",
     color: "#0f172a",
   },
 
-  statLabel: {
-    fontSize: 12,
-    color: "#64748b",
-    marginTop: 2,
+  ruleArrow: {
+    fontSize: 22,
+    color: "#94a3b8",
   },
 
+  /* ---------- DIVIDER ---------- */
   divider: {
     height: 1,
     backgroundColor: "#e5e7eb",
     marginVertical: 24,
   },
 
+  /* ---------- LOGOUT ---------- */
   logoutButton: {
     borderWidth: 1,
     borderColor: "#fecaca",
     backgroundColor: "#fef2f2",
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
 
   logoutText: {
     textAlign: "center",
     color: "#b91c1c",
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
