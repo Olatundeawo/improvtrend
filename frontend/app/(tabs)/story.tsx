@@ -1,61 +1,98 @@
-
 import { useRouter } from "expo-router"
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import { useAuth } from "../context/auth"
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Dimensions,
+} from "react-native"
+import useUserStories from "../hooks/useUserStories"
+
+const { width } = Dimensions.get("window")
+const isSmallDevice = width < 375
+const isTablet = width >= 768
+const isDesktop = width >= 1024
+
+const responsiveSize = (mobile: number, tablet?: number, desktop?: number) => {
+  if (isDesktop && desktop) return desktop
+  if (isTablet && tablet) return tablet
+  return isSmallDevice ? mobile * 0.9 : mobile
+}
+
+const responsivePadding = (mobile: number) => {
+  if (isDesktop) return mobile * 2
+  if (isTablet) return mobile * 1.5
+  return mobile
+}
 
 export default function Story() {
-  const { user } = useAuth()
   const router = useRouter()
+  const { stories, loading } = useUserStories()
 
-  const stories = user?.stories || []
+  if (loading) {
+    return (
+      <View style={styles.centerState}>
+        <Text style={styles.loadingText}>Loading your stories…</Text>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Your Stories</Text>
-        <Text style={styles.subtitle}>Stories you've created and contributed to</Text>
+        <Text style={styles.subtitle}>
+          Stories you’ve created or contributed to
+        </Text>
       </View>
 
       {/* Empty State */}
       {stories.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>📖</Text>
-          </View>
+        <View style={styles.centerState}>
           <Text style={styles.emptyTitle}>No stories yet</Text>
           <Text style={styles.emptyText}>
-            Start creating amazing collaborative stories with your community. Your stories will appear here.
+            Start exploring and join stories to see them appear here.
           </Text>
 
-          <TouchableOpacity style={styles.ctaButton} onPress={() => router.push("/")}>
+          <TouchableOpacity
+            style={styles.ctaButton}
+            activeOpacity={0.85}
+            onPress={() => router.push("/")}
+          >
             <Text style={styles.ctaText}>Explore Stories</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        /* Stories List */
         <FlatList
           data={stories}
           keyExtractor={(item) => item.id}
+          numColumns={isDesktop ? 2 : 1}
+          key={isDesktop ? "desktop" : "mobile"}
+          columnWrapperStyle={isDesktop ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <TouchableOpacity
+              activeOpacity={0.9}
               style={styles.storyCard}
-              onPress={() => router.push(`components/StoryId?id=${item.id}`)}
-              activeOpacity={0.7}
+              onPress={() =>
+                router.push(`components/StoryId?id=${item.id}`)
+              }
             >
               <View style={styles.cardContent}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.storyTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                </View>
+                <Text style={styles.storyTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+
                 <View style={styles.cardFooter}>
                   <View style={styles.metaBadge}>
-                    <Text style={styles.storyMeta}>{item.turns?.length || 0} turns</Text>
+                    <Text style={styles.storyMeta}>
+                      {item.turns?.length ?? 0} turns
+                    </Text>
                   </View>
-                  <Text style={styles.viewText}>View →</Text>
+
+                  <Text style={styles.viewText}>Open →</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -69,152 +106,147 @@ export default function Story() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#f8fafc",
+    maxWidth: isDesktop ? 1200 : "100%",
+    alignSelf: "center",
+    width: "100%",
   },
 
+  /* ---------- HEADER ---------- */
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingHorizontal: responsivePadding(24),
+    paddingTop: responsiveSize(36, 48, 56),
+    paddingBottom: responsiveSize(24, 28, 32),
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#e5e7eb",
   },
 
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    letterSpacing: -0.5,
+    fontSize: responsiveSize(30, 38, 44),
+    fontWeight: "800",
+    color: "#0f172a",
+    letterSpacing: -0.6,
   },
 
   subtitle: {
-    fontSize: 15,
-    color: "#737373",
     marginTop: 6,
-    lineHeight: 22,
+    fontSize: responsiveSize(15, 16, 18),
+    color: "#64748b",
+    lineHeight: 26,
   },
 
+  /* ---------- LIST ---------- */
   listContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingHorizontal: responsivePadding(24),
+    paddingTop: responsiveSize(24, 28, 32),
+    paddingBottom: responsiveSize(48, 64, 80),
+  },
+
+  columnWrapper: {
+    justifyContent: "space-between",
+    gap: 20,
   },
 
   storyCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
-    marginBottom: 16,
+    borderRadius: 22,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: "#e5e7eb",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
+    ...(isDesktop && {
+      flex: 1,
+      maxWidth: "48%",
+    }),
   },
 
   cardContent: {
-    padding: 20,
-  },
-
-  cardHeader: {
-    marginBottom: 16,
+    padding: responsiveSize(20, 24, 28),
   },
 
   storyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    lineHeight: 26,
+    fontSize: responsiveSize(18, 20, 22),
+    fontWeight: "700",
+    color: "#111827",
+    lineHeight: 30,
+    marginBottom: 20,
   },
 
   cardFooter: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
   },
 
   metaBadge: {
-    backgroundColor: "#f5f5f5",
-    paddingHorizontal: 12,
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 12,
   },
 
   storyMeta: {
     fontSize: 13,
-    color: "#525252",
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "#475569",
   },
 
   viewText: {
     fontSize: 14,
-    color: "#3b82f6",
-    fontWeight: "600",
+    fontWeight: "700",
+    color: "#2563eb",
   },
 
-  emptyState: {
+  /* ---------- STATES ---------- */
+  centerState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
-    paddingBottom: 80,
+    paddingHorizontal: responsivePadding(32),
   },
 
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#f0f9ff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-
-  emptyIcon: {
-    fontSize: 40,
+  loadingText: {
+    fontSize: 16,
+    color: "#64748b",
   },
 
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: responsiveSize(22, 26, 30),
+    fontWeight: "800",
+    color: "#0f172a",
+    marginBottom: 10,
   },
 
   emptyText: {
     fontSize: 15,
-    color: "#737373",
+    color: "#64748b",
     textAlign: "center",
     lineHeight: 24,
-    maxWidth: 320,
+    maxWidth: 420,
   },
 
   ctaButton: {
     marginTop: 32,
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2563eb",
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    shadowColor: "#3b82f6",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingHorizontal: 36,
+    borderRadius: 18,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
 
   ctaText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
 })
