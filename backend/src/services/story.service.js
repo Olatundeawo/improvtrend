@@ -92,3 +92,18 @@ export async function getStoryById(id) {
     
   });
 }
+
+export async function getStoryByUserId(userId) {
+
+  return prisma.story.findMany({
+    where: {userId},
+    orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        turns: true,
+        characters: true,
+        comments: true,
+      },
+  })
+}
