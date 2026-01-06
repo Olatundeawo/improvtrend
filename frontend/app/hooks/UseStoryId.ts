@@ -9,22 +9,21 @@ export default function useStoryId() {
 
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
+  const getStory = async () => {
+    try {
+      const res = await axios.get(`${URL}stories/${id}`);
+      setStory(res.data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (!id) return;
-
-    const getStory = async () => {
-      try {
-        const res = await axios.get(`${URL}stories/${id}`);
-        setStory(res.data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     getStory();
   }, [id]);
 
-  return { story, loading };
+  return { story, loading, retry:getStory };
 }
