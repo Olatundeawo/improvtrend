@@ -1,4 +1,4 @@
-import { createStory, getStories, getStoryById } from "../services/story.service.js";
+import { createStory, getStories, getStoryById, getStoryByUserId } from "../services/story.service.js";
 
 
 export async function create(req, res) {
@@ -58,5 +58,29 @@ export async function getAll(req, res) {
     } catch (err) {
          res.status(400).json({Error: err.message})
         
+    }
+}
+
+export async function getUserStoryById (req, res) {
+    try {
+      const { userId } = req.params;
+
+      if (!userId) {
+        return res.status(400).json({
+          message: "User ID is required",
+        });
+      }
+
+      const stories = await getStoryByUserId(userId);
+
+      return res.status(200).json({
+        data: stories,
+        count: stories.length,
+      });
+    } catch (error) {
+      console.error("Get stories by user error:", error);
+      return res.status(500).json({
+        message: "Failed to fetch user stories",
+      });
     }
 }
