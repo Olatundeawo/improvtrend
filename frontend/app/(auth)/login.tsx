@@ -69,8 +69,7 @@ export default function Login() {
       if (response.status !== 200) return;
 
       setMessage("Login Successfully");
-      await AsyncStorage.setItem("hasSeenRules", "false");
-
+      
       await login({
         id: response.data.user.id,
         username: response.data.user.username,
