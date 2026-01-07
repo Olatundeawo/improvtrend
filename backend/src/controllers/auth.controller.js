@@ -25,7 +25,7 @@ export async function register(req, res) {
 
   } catch (err) {
     if (
-      err.message === "choose a different username, username already picked." ||
+      err.message === "Choose a different username, username already picked." ||
       err.message === "Email already used"
     ) {
      return res.status(409).json({ error: err.message})

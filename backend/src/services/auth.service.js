@@ -22,7 +22,7 @@ export async function registerUser ({ username, email, password }) {
 
 
     if (usernameExist) {
-        throw new Error("choose a different username, username already picked.")
+        throw new Error("Choose a different username, username already picked.")
     }
    
 
