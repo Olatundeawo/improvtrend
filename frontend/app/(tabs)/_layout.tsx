@@ -9,7 +9,7 @@ const IS_WEB = Platform.OS === "web";
 export default function TabLayout() {
   const { user, loading } = useAuth();
 
-  // ⏳ While restoring auth state
+  //  While restoring auth state
   if (loading) {
     return (
       <View
@@ -24,12 +24,12 @@ export default function TabLayout() {
     );
   }
 
-  // 🔒 Not logged in → redirect
+  //  Not logged in →redirect
   if (!user) {
     return <Redirect href="(auth)/login" />;
   }
 
-  // ✅ Logged in → show tabs
+  //  Logged in  show tabs
   return (
     <Tabs
       screenOptions={{
