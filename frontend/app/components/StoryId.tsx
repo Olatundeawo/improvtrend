@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import {
   Dimensions,
   FlatList,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -12,7 +13,6 @@ import {
   Text,
   TextInput,
   View,
-  Modal,
 } from "react-native"
 
 import FeedHeader from "../components/FeedHeader"
@@ -63,8 +63,30 @@ export default function StoryScreen() {
   }, [error, message])
 
   if (loading) return <FeedSkeleton count={5} />
-  if (!story) return <Pressable onPress={retry}><Text>Retry</Text></Pressable>
-
+  if (!story && !loading) {
+    return (
+      <View style={styles.retryScreen}>
+        <Ionicons name="cloud-offline-outline" size={48} color="#7C3AED" />
+  
+        <Text style={styles.retryTitle}>Connection issue</Text>
+        <Text style={styles.retryText}>
+          We couldn’t load this story. Please check your internet connection.
+        </Text>
+  
+        <Pressable
+          onPress={retry}
+          style={({ pressed }) => [
+            styles.retryButton,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Ionicons name="refresh" size={18} color="#FFFFFF" />
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </Pressable>
+      </View>
+    )
+  }
+  
   const selectedCharacter = story.characters.find((c) => c.id === characterId)
   const canSubmit = Boolean(selectedCharacter && text.trim() && !isSubmitting)
 
@@ -462,6 +484,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#7C3AED",
+  },
+  retryScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "#FAF5FF",
+  },
+  
+  retryTitle: {
+    marginTop: 12,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  
+  retryText: {
+    marginTop: 8,
+    fontSize: 15,
+    textAlign: "center",
+    color: "#6B7280",
+    maxWidth: 320,
+  },
+  
+  retryButton: {
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "#7C3AED",
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
   },
   
 })
