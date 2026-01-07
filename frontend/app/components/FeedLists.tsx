@@ -63,15 +63,19 @@ export default function FeedList({ stories, onStoryPress, isLoading, onRetry, re
     }}
     onEndReachedThreshold={0.7}
   
-    ListFooterComponent={
-      hasMore ? (
-        <View style={{ paddingVertical: 20 }}>
-          <Text style={{ textAlign: "center", color: "#6B7280" }}>
-            Loading more stories...
-          </Text>
-        </View>
-      ) : null
-    }
+    ListFooterComponent={() => { if (hasMore  && stories.length > 0) {
+      return ( <View style={styles.footer}>
+         <Text style={styles.footerText}>Loading more stories…</Text> 
+         </View> ); 
+         } 
+         if (!hasMore && stories.length > 0)
+           { return ( <View style={styles.footer}>
+             <Text style={styles.footerDone}>
+              You’re all caught up 🎉</Text> </View> );
+               } 
+               return null; 
+              }
+            }
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -379,5 +383,20 @@ const styles = StyleSheet.create({
     color: COLORS.background,
     fontSize: 14,
     fontFamily: FONT.semibold,
+  },
+  footer:
+   { paddingVertical: 24,
+     alignItems: "center",
+     },
+      footerText: 
+      { fontSize: 14, 
+        color: COLORS.text.secondary,
+         fontFamily: FONT.medium,
+         },
+          footerDone:
+           { fontSize: 14,
+             color: COLORS.primary,
+              fontFamily: FONT.semibold, 
+
   },
 })
