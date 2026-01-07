@@ -1,12 +1,5 @@
 import { useRouter } from "expo-router"
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Dimensions,
-} from "react-native"
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import useUserStories from "../hooks/useUserStories"
 
 const { width } = Dimensions.get("window")
@@ -43,24 +36,16 @@ export default function Story() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Your Stories</Text>
-        <Text style={styles.subtitle}>
-          Stories you’ve created or contributed to
-        </Text>
+        <Text style={styles.subtitle}>Stories you've created.</Text>
       </View>
 
       {/* Empty State */}
       {stories.length === 0 ? (
         <View style={styles.centerState}>
           <Text style={styles.emptyTitle}>No stories yet</Text>
-          <Text style={styles.emptyText}>
-            Start exploring and join stories to see them appear here.
-          </Text>
+          <Text style={styles.emptyText}>Start exploring and join stories to see them appear here.</Text>
 
-          <TouchableOpacity
-            style={styles.ctaButton}
-            activeOpacity={0.85}
-            onPress={() => router.push("/")}
-          >
+          <TouchableOpacity style={styles.ctaButton} activeOpacity={0.85} onPress={() => router.push("/")}>
             <Text style={styles.ctaText}>Explore Stories</Text>
           </TouchableOpacity>
         </View>
@@ -76,9 +61,7 @@ export default function Story() {
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.storyCard}
-              onPress={() =>
-                router.push(`components/StoryId?id=${item.id}`)
-              }
+              onPress={() => router.push(`components/StoryId?id=${item.id}`)}
             >
               <View style={styles.cardContent}>
                 <Text style={styles.storyTitle} numberOfLines={2}>
@@ -87,9 +70,7 @@ export default function Story() {
 
                 <View style={styles.cardFooter}>
                   <View style={styles.metaBadge}>
-                    <Text style={styles.storyMeta}>
-                      {item.turns?.length ?? 0} turns
-                    </Text>
+                    <Text style={styles.storyMeta}>{item.turns?.length ?? 0} turns</Text>
                   </View>
 
                   <Text style={styles.viewText}>Open →</Text>
@@ -106,59 +87,61 @@ export default function Story() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
-    maxWidth: isDesktop ? 1200 : "100%",
+    backgroundColor: "#fafaf9",
+    maxWidth: isDesktop ? 1280 : "100%",
     alignSelf: "center",
     width: "100%",
   },
 
-  /* ---------- HEADER ---------- */
+  
   header: {
     paddingHorizontal: responsivePadding(24),
-    paddingTop: responsiveSize(36, 48, 56),
-    paddingBottom: responsiveSize(24, 28, 32),
+    paddingTop: responsiveSize(40, 52, 64),
+    paddingBottom: responsiveSize(28, 32, 40),
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#e8e8e8",
   },
 
   title: {
-    fontSize: responsiveSize(30, 38, 44),
-    fontWeight: "800",
-    color: "#0f172a",
-    letterSpacing: -0.6,
+    fontSize: responsiveSize(32, 40, 48),
+    fontWeight: "700",
+    color: "#1a1a1a",
+    letterSpacing: -0.4,
+    lineHeight: 40,
   },
 
   subtitle: {
-    marginTop: 6,
-    fontSize: responsiveSize(15, 16, 18),
-    color: "#64748b",
-    lineHeight: 26,
+    marginTop: 8,
+    fontSize: responsiveSize(15, 16, 17),
+    color: "#717171",
+    lineHeight: 24,
+    fontWeight: "400",
   },
 
   /* ---------- LIST ---------- */
   listContent: {
     paddingHorizontal: responsivePadding(24),
-    paddingTop: responsiveSize(24, 28, 32),
-    paddingBottom: responsiveSize(48, 64, 80),
+    paddingTop: responsiveSize(28, 36, 44),
+    paddingBottom: responsiveSize(52, 68, 84),
   },
 
   columnWrapper: {
     justifyContent: "space-between",
-    gap: 20,
+    gap: 24,
   },
 
   storyCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 22,
-    marginBottom: 20,
+    borderRadius: 16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#e5e5e5",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
     ...(isDesktop && {
       flex: 1,
       maxWidth: "48%",
@@ -166,15 +149,15 @@ const styles = StyleSheet.create({
   },
 
   cardContent: {
-    padding: responsiveSize(20, 24, 28),
+    padding: responsiveSize(24, 28, 32),
   },
 
   storyTitle: {
-    fontSize: responsiveSize(18, 20, 22),
-    fontWeight: "700",
-    color: "#111827",
-    lineHeight: 30,
-    marginBottom: 20,
+    fontSize: responsiveSize(18, 20, 23),
+    fontWeight: "600",
+    color: "#1a1a1a",
+    lineHeight: 32,
+    marginBottom: 22,
   },
 
   cardFooter: {
@@ -184,22 +167,22 @@ const styles = StyleSheet.create({
   },
 
   metaBadge: {
-    backgroundColor: "#f1f5f9",
-    paddingHorizontal: 14,
+    backgroundColor: "#f5f5f5",
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 10,
   },
 
   storyMeta: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#475569",
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#636363",
   },
 
   viewText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#2563eb",
+    fontWeight: "600",
+    color: "#3b82f6",
   },
 
   /* ---------- STATES ---------- */
@@ -211,42 +194,44 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    fontSize: 16,
-    color: "#64748b",
+    fontSize: 15,
+    color: "#717171",
+    fontWeight: "500",
   },
 
   emptyTitle: {
-    fontSize: responsiveSize(22, 26, 30),
-    fontWeight: "800",
-    color: "#0f172a",
-    marginBottom: 10,
+    fontSize: responsiveSize(24, 28, 32),
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 12,
   },
 
   emptyText: {
     fontSize: 15,
-    color: "#64748b",
+    color: "#717171",
     textAlign: "center",
-    lineHeight: 24,
-    maxWidth: 420,
+    lineHeight: 26,
+    maxWidth: 440,
+    fontWeight: "400",
   },
 
   ctaButton: {
-    marginTop: 32,
-    backgroundColor: "#2563eb",
-    paddingVertical: 16,
-    paddingHorizontal: 36,
-    borderRadius: 18,
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
+    marginTop: 36,
+    backgroundColor: "#3b82f6",
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
 
   ctaText: {
     color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: 0.3,
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 })
