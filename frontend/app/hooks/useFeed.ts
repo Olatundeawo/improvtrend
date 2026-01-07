@@ -22,6 +22,7 @@ export default function useFeed() {
 
   const [newStories, setNewStories] = useState<Story[]>([]);
   const [showNewStoriesBanner, setShowNewStoriesBanner] = useState<boolean>(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const newestStoryTimeRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +51,7 @@ export default function useFeed() {
       console.error("Fetch more error:", err);
     } finally {
       setLoading(false);
+      
     }
   };
 
@@ -79,6 +81,7 @@ export default function useFeed() {
       setError("unable to refresh")
     } finally {
       setRefreshing(false);
+      setInitialLoading(false);
     }
   };
 
@@ -165,7 +168,7 @@ export default function useFeed() {
     refreshing,
     hasMore,
     error,
-
+    initialLoading,
     showNewStoriesBanner,
     newStoriesCount: newStories.length,
     applyNewStories,
