@@ -16,7 +16,7 @@ function formatJoinedDate(dateString?: string) {
 
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
-    month: "long",
+    month: "short",
     year: "numeric",
   });
 }
