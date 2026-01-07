@@ -1,7 +1,6 @@
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import FeedList from "../components/FeedLists";
 import FeedTab from "../components/FeedTabs";
-// import Rules from "../components/rule"
 import NewStoriesBanner from "../components/NewStories";
 import useFeed from "../hooks/useFeed";
 
@@ -10,6 +9,7 @@ export default function FeedScreen() {
   const {
     stories,
     error,
+    initialLoading,
     activeTab,
     setActiveTab,
     handleStoryId,
@@ -23,42 +23,14 @@ export default function FeedScreen() {
     applyNewStories,
   } = useFeed()
   
-  // const [showRules, setShowRules] = useState(false);
-
+  
   const { width } = useWindowDimensions()
   const isLargeScreen = width >= 1024
 
-  // Check if user has seen rules
-  // useEffect(() => {
-  //   const checkRules = async () => {
-  //     try {
-  //       const value = await AsyncStorage.getItem("hasSeenRules");
-  //       if (!value) {
-  //         setShowRules(true); 
-  //       }
-  //     } catch (e) {
-  //       console.error("Error reading hasSeenRules:", e);
-  //     }
-  //   };
-  //   checkRules();
-  // }, []);
-
-  // const handleCloseRules = async () => {
-  //   try {
-  //     await AsyncStorage.setItem("hasSeenRules", "true");
-  //   } catch (e) {
-  //     console.error("Error setting hasSeenRules:", e);
-  //   }
-  //   setShowRules(false);
-  // };
-
+  
   return (
     <View style={styles.screen}>
 
-      {/* FIRST TIME RULES MODAL */}
-      {/* <Modal visible={showRules} animationType="slide" transparent={false}>
-        <Rules onClose={handleCloseRules} />
-      </Modal> */}
 
       <View
         style={[
@@ -86,21 +58,14 @@ export default function FeedScreen() {
             <FeedList
               stories={stories}
               onStoryPress={handleStoryId}
-              isLoading={loading}
+              isLoading={initialLoading}
               refreshing={refreshing}
               onRefresh={refreshFeed}
               onRetry={refreshFeed}
               onEndReached={fetchMore}
-              hasMore={true}
+              hasMore={hasMore}
             />
           </View>
-
-          {/* RULES (DESKTOP ONLY) */}
-          {isLargeScreen && (
-            <View style={styles.rulesSection}>
-              {/* <Rules onClose={() => {}} />  */}
-            </View>
-          )}
         </View>
       </View>
     </View>
