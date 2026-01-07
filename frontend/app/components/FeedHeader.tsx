@@ -9,8 +9,6 @@ import {
 
 import logo from "../../assets/images/logo.png";
 
-const BRAND_COLOR = "#4F46E5"; // adjust to your actual logo color
-
 export default function FeedHeader() {
   const router = useRouter();
 
