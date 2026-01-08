@@ -29,6 +29,13 @@ app.use("/api/stories", storyRoutes);
 app.use("/api", turnRoues);
 app.use("/api", commentRoutes);
 app.use("/api", upvoteRoutes);
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: Date.now(),
+  });
+});
+
 
 
 app.use((req, res) => {
