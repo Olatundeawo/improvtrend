@@ -1,6 +1,8 @@
 import prisma from "../prisma/client.js";
 import parseCharacters from "../utils/parseCharacters.js";
 
+import { resolveBadge } from "../utils/badge.js";
+import { BADGE_META } from "../utils/badgeMeta.js";
 
 export async function createStory(userId, data) {
   const { title, content, characters } = data;
@@ -21,20 +23,58 @@ export async function createStory(userId, data) {
     throw new Error("Duplicate character names are not allowed");
   }
 
-  return prisma.story.create({
-    data: {
-      title,
-      content,
-      userId,
-      characters: {
-        create: parsedCharacters.map(name => ({ name })),
+  return prisma.$transaction(async (tx) => {
+    // 1. Create story
+    const story = await tx.story.create({
+      data: {
+        title,
+        content,
+        userId,
+        characters: {
+          create: parsedCharacters.map(name => ({ name })),
+        },
       },
-    },
-    include: {
-      characters: true,
-    },
+      include: {
+        characters: true,
+      },
+    });
+
+    // 2. Increment story count
+    const user = await tx.user.update({
+      where: { id: userId },
+      data: { storyCount: { increment: 1 } },
+    });
+
+    const newStoryCount = user.storyCount + 1;
+    const newBadge = resolveBadge(newStoryCount);
+
+    // 3. Unlock badge + notify
+    if (newBadge && newBadge !== user.badge) {
+      await tx.user.update({
+        where: { id: userId },
+        data: { badge: newBadge },
+      });
+
+      const meta = BADGE_META[newBadge];
+
+      await tx.notification.create({
+        data: {
+          userId,
+          type: "BADGE_UNLOCKED",
+          title: `Badge Unlocked: ${meta.title}`,
+          message: meta.message,
+        },
+      });
+    }
+
+    return {
+      story,
+      badgeUnlocked: newBadge && newBadge !== user.badge ? newBadge : null,
+    };
   });
 }
+
+
 
 export async function getStories({ page = 1, limit = 10 }) {
   const skip = (page - 1) * limit;
@@ -54,7 +94,7 @@ export async function getStories({ page = 1, limit = 10 }) {
           },
         },
         user: {
-          select: { username: true },
+          select: { username: true, badge: true },
         },
         comments: {
           select: { id: true },
@@ -95,15 +135,21 @@ export async function getStoryById(id) {
 
 export async function getStoryByUserId(userId) {
 
-  return prisma.story.findMany({
-    where: {userId},
-    orderBy: {
-        createdAt: "desc",
+ return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      storyCount: true,
+      badge: true,
+      stories: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          turns: true,
+          characters: true,
+          comments: true,
+        },
       },
-      include: {
-        turns: true,
-        characters: true,
-        comments: true,
-      },
+    },
   })
 }
