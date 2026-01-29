@@ -6,8 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-   
- 
 }
 
 datasource db {
@@ -15,6 +13,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserBadge {
+  NEWBIE
+  CONTRIBUTOR
+  CREATOR
+  TREND_STARTER
+}
+
+enum NotificationType {
+  BADGE_UNLOCKED
+  NEW_COMMENT
+  NEW_UPVOTE
+  TURN_RELY
+  STORY_TRENDING
+}
 
 model User {
   id            String      @id @default(uuid())
@@ -23,15 +35,34 @@ model User {
   passwordHash  String
   createdAt     DateTime    @default(now())
 
+
+  storyCount    Int         @default(0)
+  badge         UserBadge?
+
   stories       Story[]
   turns         Turn[]
   comments      Comment[]
   upvotes       TurnUpvote[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
 
 model Story {
   id            String      @id @default(uuid())
-  userId        String      
+  userId        String
   title         String
   content       String
   isLocked      Boolean     @default(false)
@@ -47,20 +78,18 @@ model Story {
 
 model Character {
   id             Int          @id @default(autoincrement())
-  name           String       
+  name           String
   storyId        String
 
   turns          Turn[]
   story          Story        @relation(fields: [storyId], references: [id])
-
-
 }
 
 model Turn {
   id            String        @id @default(uuid())
   storyId       String
   userId        String
-  characterId   Int    
+  characterId   Int
   content       String
   createdAt     DateTime      @default(now())
 
