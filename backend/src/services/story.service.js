@@ -94,7 +94,7 @@ export async function getStories({ page = 1, limit = 10 }) {
           },
         },
         user: {
-          select: { username: true, badge: true },
+          select: { username: true },
         },
         comments: {
           select: { id: true },
