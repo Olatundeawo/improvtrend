@@ -24,6 +24,7 @@ function formatJoinedDate(dateString?: string) {
 export default function Profile() {
   const { user, logout } = useAuth();
   const { stories } = useUserStories();
+  console.log("User stories:", stories); // Debugging line
   const router = useRouter();
   const { width } = useWindowDimensions();
 
@@ -34,7 +35,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace("(auth)/login");
+    router.replace("/(auth)/login");
   };
 
   return (

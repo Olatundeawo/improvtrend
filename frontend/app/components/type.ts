@@ -21,6 +21,7 @@ export type Story = {
     content: string;
     user: {
       username: string;
+      badge?: UserBadge
     };
     createdAt: string;
     characters: Character[];
@@ -41,4 +42,20 @@ export type Turns = {
       };
     upvotes: Upvote[]
 }
-  
+
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+};
+
+export type UserBadge =
+  | "NEWBIE"
+  | "CONTRIBUTOR"
+  | "CREATOR"
+  | "TREND_STARTER"
+
+// Badges that should actually be displayed
+export type DisplayBadge = Exclude<UserBadge, "NEWBIE">

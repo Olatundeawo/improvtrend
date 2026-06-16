@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Dimensions, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import useUserStories from "../hooks/useUserStories"
 
 const { width } = Dimensions.get("window")
@@ -21,12 +21,17 @@ const responsivePadding = (mobile: number) => {
 
 export default function Story() {
   const router = useRouter()
-  const { stories, loading } = useUserStories()
+  const { stories, loading, error, refetch } = useUserStories()
 
-  if (loading) {
+  // Error state
+  if (error && !loading) {
     return (
       <View style={styles.centerState}>
-        <Text style={styles.loadingText}>Loading your stories…</Text>
+        <Text style={styles.emptyTitle}>Something went wrong</Text>
+        <Text style={styles.emptyText}>{error}</Text>
+        <TouchableOpacity style={styles.ctaButton} activeOpacity={0.85} onPress={refetch}>
+          <Text style={styles.ctaText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -40,11 +45,12 @@ export default function Story() {
       </View>
 
       {/* Empty State */}
-      {stories.length === 0 ? (
+      {!loading && stories.length === 0 ? (
         <View style={styles.centerState}>
           <Text style={styles.emptyTitle}>No stories yet</Text>
-          <Text style={styles.emptyText}>Start exploring and join stories to see them appear here.</Text>
-
+          <Text style={styles.emptyText}>
+            Start exploring and join stories to see them appear here.
+          </Text>
           <TouchableOpacity style={styles.ctaButton} activeOpacity={0.85} onPress={() => router.push("/")}>
             <Text style={styles.ctaText}>Explore Stories</Text>
           </TouchableOpacity>
@@ -57,22 +63,29 @@ export default function Story() {
           key={isDesktop ? "desktop" : "mobile"}
           columnWrapperStyle={isDesktop ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContent}
+          // ✅ Pull-to-refresh
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={refetch}
+              tintColor="#3b82f6"
+              colors={["#3b82f6"]}
+            />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.storyCard}
-              onPress={() => router.push(`components/StoryId?id=${item.id}`)}
+              onPress={() => router.push(`/components/StoryId?id=${item.id}`)}
             >
               <View style={styles.cardContent}>
                 <Text style={styles.storyTitle} numberOfLines={2}>
                   {item.title}
                 </Text>
-
                 <View style={styles.cardFooter}>
                   <View style={styles.metaBadge}>
                     <Text style={styles.storyMeta}>{item.turns?.length ?? 0} turns</Text>
                   </View>
-
                   <Text style={styles.viewText}>Open →</Text>
                 </View>
               </View>
@@ -92,8 +105,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: "100%",
   },
-
-  
   header: {
     paddingHorizontal: responsivePadding(24),
     paddingTop: responsiveSize(40, 52, 64),
@@ -102,7 +113,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e8e8e8",
   },
-
   title: {
     fontSize: responsiveSize(32, 40, 48),
     fontWeight: "700",
@@ -110,7 +120,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     lineHeight: 40,
   },
-
   subtitle: {
     marginTop: 8,
     fontSize: responsiveSize(15, 16, 17),
@@ -118,19 +127,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: "400",
   },
-
-  /* ---------- LIST ---------- */
   listContent: {
     paddingHorizontal: responsivePadding(24),
     paddingTop: responsiveSize(28, 36, 44),
     paddingBottom: responsiveSize(52, 68, 84),
   },
-
   columnWrapper: {
     justifyContent: "space-between",
     gap: 24,
   },
-
   storyCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -142,16 +147,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
-    ...(isDesktop && {
-      flex: 1,
-      maxWidth: "48%",
-    }),
+    ...(isDesktop && { flex: 1, maxWidth: "48%" }),
   },
-
   cardContent: {
     padding: responsiveSize(24, 28, 32),
   },
-
   storyTitle: {
     fontSize: responsiveSize(18, 20, 23),
     fontWeight: "600",
@@ -159,53 +159,44 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     marginBottom: 22,
   },
-
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   metaBadge: {
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
   },
-
   storyMeta: {
     fontSize: 12,
     fontWeight: "500",
     color: "#636363",
   },
-
   viewText: {
     fontSize: 14,
     fontWeight: "600",
     color: "#3b82f6",
   },
-
-  /* ---------- STATES ---------- */
   centerState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: responsivePadding(32),
   },
-
   loadingText: {
     fontSize: 15,
     color: "#717171",
     fontWeight: "500",
   },
-
   emptyTitle: {
     fontSize: responsiveSize(24, 28, 32),
     fontWeight: "700",
     color: "#1a1a1a",
     marginBottom: 12,
   },
-
   emptyText: {
     fontSize: 15,
     color: "#717171",
@@ -214,7 +205,6 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     fontWeight: "400",
   },
-
   ctaButton: {
     marginTop: 36,
     backgroundColor: "#3b82f6",
@@ -227,7 +217,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-
   ctaText: {
     color: "#ffffff",
     fontSize: 15,

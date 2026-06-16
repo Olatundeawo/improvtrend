@@ -14,8 +14,12 @@ export async function addTurn(storyId, userId, characterId, content) {
         orderBy: {createdAt: "desc" }
     });
 
-    if(lastTurn?.userId === userId) {
-        throw new Error("You cannot contribute twice in a row.")
+    // if(lastTurn?.userId === userId) {
+    //     throw new Error("You cannot contribute twice in a row.")
+    // }
+
+    if (lastTurn?.characterId === characterId) {
+        throw new Error("You cannot use the same character twice in a row.")
     }
 
     return prisma.turn.create({

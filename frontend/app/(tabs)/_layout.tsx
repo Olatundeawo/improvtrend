@@ -1,35 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FeedHeader from "../components/FeedHeader";
 import { useAuth } from "../context/auth";
 
-const IS_WEB = Platform.OS === "web";
-
 export default function TabLayout() {
   const { user, loading } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
-  //  While restoring auth state
+  // Responsive values
+  const isTablet = width >= 768;
+  const iconSize = isTablet ? 26 : 24;
+  const tabBarHeight = 56 + insets.bottom; // 56 base + safe area
+
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  //  Not logged in →redirect
   if (!user) {
     return <Redirect href="(auth)/login" />;
   }
 
-  //  Logged in  show tabs
   return (
     <Tabs
       screenOptions={{
@@ -40,13 +37,19 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderTopColor: "#E5E7EB",
-          height: IS_WEB ? 64 : 60,
-          paddingBottom: IS_WEB ? 12 : 6,
-          paddingTop: 6,
+          borderTopWidth: 1,
+          height: tabBarHeight,
+          paddingBottom: insets.bottom || 8,
+          paddingTop: 8,
+          // Tablet: center the tab bar and cap its width
+          ...(isTablet && {
+            paddingHorizontal: width * 0.15,
+          }),
         },
         tabBarActiveTintColor: "#2563EB",
         tabBarInactiveTintColor: "#94A3B8",
         tabBarShowLabel: false,
+        tabBarHideOnKeyboard: Platform.OS === "android", // hide bar when keyboard opens on Android
       }}
     >
       {/* FEED */}
@@ -57,7 +60,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "newspaper" : "newspaper-outline"}
-              size={22}
+              size={iconSize}
               color={color}
             />
           ),
@@ -72,7 +75,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "book" : "book-outline"}
-              size={22}
+              size={iconSize}
               color={color}
             />
           ),
@@ -87,7 +90,22 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}
-              size={22}
+              size={iconSize}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* NOTIFICATIONS */}
+      <Tabs.Screen
+        name="notification"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "notifications" : "notifications-outline"}
+              size={iconSize}
               color={color}
             />
           ),
