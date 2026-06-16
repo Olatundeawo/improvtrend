@@ -7,6 +7,7 @@ import turnRoues from './routes/turn.routes.js'
 import upvoteRoutes from './routes/upvote.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
+import characterRouter from "./routes/character.routes.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/stories", storyRoutes);
+app.use("/api/stories", characterRouter);
 app.use("/api", turnRoues);
 app.use("/api", notificationRoutes);
 app.use("/api", commentRoutes);
