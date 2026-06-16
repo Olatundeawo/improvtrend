@@ -3,7 +3,7 @@ import {
     claimCharacter,
     unclaimCharacter,
     getCharactersByStory
-} from "../services/character.service.js";
+} from "../services/characters.service.js";
 
 export async function createCharacter(req, res) {
     try {
