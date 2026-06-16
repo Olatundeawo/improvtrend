@@ -84,6 +84,7 @@ export default function Login() {
 
       if (response.data?.token) {
         await AsyncStorage.setItem("token", response.data.token)
+        await AsyncStorage.setItem("userId", response.data.user.id);
       }
 
       setForm({ identifier: "", password: "" })
