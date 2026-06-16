@@ -44,6 +44,7 @@ model User {
   comments      Comment[]
   upvotes       TurnUpvote[]
   notifications Notification[]
+  claimedCharacters Character[]
 }
 
 model Notification {
@@ -80,9 +81,13 @@ model Character {
   id             Int          @id @default(autoincrement())
   name           String
   storyId        String
+  claimedByUserId String?
 
   turns          Turn[]
   story          Story        @relation(fields: [storyId], references: [id])
+  claimedBy       User?       @relation(fields: [claimedByUserId], references: [id])
+
+  @@unique([name, storyId])
 }
 
 model Turn {
