@@ -13,6 +13,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReactionType {
+  SPICY
+  PLOT_TWIST
+  FUNNY
+  BEST_LINE
+}
+
 enum UserBadge {
   NEWBIE
   CONTRIBUTOR
@@ -23,7 +30,7 @@ enum UserBadge {
 enum NotificationType {
   BADGE_UNLOCKED
   NEW_COMMENT
-  NEW_UPVOTE
+  NEW_REACTION
   TURN_RELY
   STORY_TRENDING
 }
@@ -42,7 +49,7 @@ model User {
   stories       Story[]
   turns         Turn[]
   comments      Comment[]
-  upvotes       TurnUpvote[]
+  reactions     TurnReaction[]
   notifications Notification[]
   claimedCharacters Character[]
 }
@@ -101,22 +108,24 @@ model Turn {
   story         Story         @relation(fields: [storyId], references: [id])
   user          User          @relation(fields: [userId], references: [id])
   character     Character     @relation(fields: [characterId], references: [id])
-  upvotes       TurnUpvote[]
+  reactions     TurnReaction[]
 
   @@index([storyId, createdAt])
 }
 
-model TurnUpvote {
-  id              String      @id @default(uuid())
-  turnId          String
-  userId          String
-  createdAt       DateTime    @default(now())
+model TurnReaction {
+  id           String       @id @default(uuid())
+  turnId       String
+  userId       String
+  type         ReactionType
+  createdAt    DateTime     @default(now())
 
-  turn            Turn        @relation(fields: [turnId], references: [id])
-  user            User        @relation(fields: [userId], references: [id])
+  turn         Turn         @relation(fields: [turnId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
-  @@index([turnId, userId])
-  @@unique([turnId, userId])
+  @@unique([turnId, userId, type]) 
+  @@index([turnId])
+  @@index([userId])
 }
 
 model Comment {

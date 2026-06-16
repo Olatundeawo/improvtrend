@@ -4,10 +4,10 @@ import cors from "cors";
 import commentRoutes from './routes/comment.routes.js'
 import storyRoutes from './routes/story.routes.js'
 import turnRoues from './routes/turn.routes.js'
-import upvoteRoutes from './routes/upvote.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
 import characterRouter from "./routes/character.routes.js";
+import reactionRoutes from "./routes/reaction.routes.js";
 
 dotenv.config();
 
@@ -32,7 +32,7 @@ app.use("/api/stories", characterRouter);
 app.use("/api", turnRoues);
 app.use("/api", notificationRoutes);
 app.use("/api", commentRoutes);
-app.use("/api", upvoteRoutes);
+app.use("/reactions", reactionRoutes);
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
