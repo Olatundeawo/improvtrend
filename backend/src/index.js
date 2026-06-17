@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
   console.log("METHOD:", req.method);
+  console.log("URL:", req.url);
   console.log("CONTENT-TYPE:", req.headers["content-type"]);
   console.log("RAW BODY:", req.body);
   next();
@@ -32,7 +33,7 @@ app.use("/api/stories", characterRouter);
 app.use("/api", turnRoues);
 app.use("/api", notificationRoutes);
 app.use("/api", commentRoutes);
-app.use("/reactions", reactionRoutes);
+app.use("/api/reactions", reactionRoutes);
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
