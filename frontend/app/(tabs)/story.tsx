@@ -63,7 +63,7 @@ export default function Story() {
           key={isDesktop ? "desktop" : "mobile"}
           columnWrapperStyle={isDesktop ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContent}
-          // ✅ Pull-to-refresh
+          
           refreshControl={
             <RefreshControl
               refreshing={loading}
