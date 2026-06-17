@@ -49,6 +49,11 @@ export default function useFeed() {
       setPage((p) => p + 1);
     } catch (err) {
       console.error("Fetch more error:", err);
+      if (axios.isAxiosError(err)) {
+        console.error("Status:", err.response?.status);
+        console.error("Data:", JSON.stringify(err.response?.data));
+        console.error("URL hit:", err.config?.url);
+      }
     } finally {
       setLoading(false);
       
@@ -68,6 +73,8 @@ export default function useFeed() {
         },
       });
 
+      console.log("Feed refreshed", res.data);
+
       const { data, pagination } = res.data;
 
       setStories(data);
@@ -79,6 +86,11 @@ export default function useFeed() {
       setShowNewStoriesBanner(false);
     } catch (err) {
       setError("unable to refresh")
+      if (axios.isAxiosError(err)) {
+        console.error("Status:", err.response?.status);
+        console.error("Data:", JSON.stringify(err.response?.data));
+        console.error("URL hit:", err.config?.url);
+      }
     } finally {
       setRefreshing(false);
       setInitialLoading(false);
@@ -108,8 +120,13 @@ export default function useFeed() {
         setNewStories(newer);
         setShowNewStoriesBanner(true);
       }
-    } catch (e) {
+    } catch (err) {
       setError("Your connection is weak")
+      if (axios.isAxiosError(err)) {
+        console.error("Status:", err.response?.status);
+        console.error("Data:", JSON.stringify(err.response?.data));
+        console.error("URL hit:", err.config?.url);
+      }
     }
   };
 
@@ -153,7 +170,7 @@ export default function useFeed() {
 
   
   const handleStoryId = (id: string) => {
-    router.push(`components/StoryId?id=${id}`);
+    router.push(`/components/StoryId?id=${id}`);
   };
 
   return {
