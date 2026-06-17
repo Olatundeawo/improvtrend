@@ -45,6 +45,8 @@ export async function getReactions(turnId: string): Promise<ReactionSummary[]> {
     headers: await authHeaders(),
   });
 
+  console.log("getReactions response:", res);
+
   if (!res.ok) throw new Error("Failed to fetch reactions");
   const data = await res.json();
   return data.summary;
