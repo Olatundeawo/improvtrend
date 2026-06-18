@@ -35,6 +35,24 @@ enum NotificationType {
   STORY_TRENDING
 }
 
+enum ArcSize {
+  SHORT   
+  MEDIUM 
+  EPIC 
+}
+
+enum ArcStage {
+  SETUP
+  RISING
+  CLIMAX
+  RESOLUTION
+}
+
+enum StoryStatus {
+  ACTIVE
+  COMPLETED
+}
+
 model User {
   id            String      @id @default(uuid())
   username      String      @unique
@@ -52,6 +70,7 @@ model User {
   reactions     TurnReaction[]
   notifications Notification[]
   claimedCharacters Character[]
+  storyVotes    StoryVote[]
 }
 
 model Notification {
@@ -69,19 +88,39 @@ model Notification {
 }
 
 model Story {
-  id            String      @id @default(uuid())
-  userId        String
-  title         String
-  content       String
-  isLocked      Boolean     @default(false)
-  createdAt     DateTime    @default(now())
+  id          String      @id @default(uuid())
+  userId      String
+  title       String
+  content     String
+  isLocked    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
 
-  user          User        @relation(fields: [userId], references: [id])
-  turns         Turn[]
-  characters    Character[]
-  comments      Comment[]
+  arcSize     ArcSize     @default(SHORT)
+  maxTurns    Int         @default(6)
+  turnCount   Int         @default(0)
+  arcStage    ArcStage    @default(SETUP)
+  status      StoryStatus @default(ACTIVE)
+
+  user        User        @relation(fields: [userId], references: [id])
+  turns       Turn[]
+  characters  Character[]
+  comments    Comment[]
+  votes       StoryVote[]
 
   @@index([createdAt])
+}
+
+model StoryVote {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([storyId, userId])
+  @@index([storyId])
 }
 
 model Character {
