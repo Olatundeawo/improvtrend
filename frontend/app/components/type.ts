@@ -15,19 +15,19 @@ type Character = {
     userId: string
   }
   
-export type Story = {
-    id: string;
-    title: string;
-    content: string;
-    user: {
-      username: string;
-      badge?: UserBadge
-    };
-    createdAt: string;
-    characters: Character[];
-    comments: Comment[];
-    turns: Turn[];
-  };
+// export type Story = {
+//     id: string;
+//     title: string;
+//     content: string;
+//     user: {
+//       username: string;
+//       badge?: UserBadge
+//     };
+//     createdAt: string;
+//     characters: Character[];
+//     comments: Comment[];
+//     turns: Turn[];
+//   };
 
 export type Turns = {
     storyId: string;
@@ -59,3 +59,30 @@ export type UserBadge =
 
 // Badges that should actually be displayed
 export type DisplayBadge = Exclude<UserBadge, "NEWBIE">
+
+export type ArcSize  = "SHORT" | "MEDIUM" | "EPIC";
+export type ArcStage = "SETUP" | "RISING" | "CLIMAX" | "RESOLUTION";
+export type StoryStatus = "ACTIVE" | "COMPLETED";
+
+export type Story = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  isLocked: boolean;
+
+  // arc
+  arcSize:   ArcSize;
+  arcStage:  ArcStage;
+  maxTurns:  number;
+  turnCount: number;
+  status:    StoryStatus;
+  voteCount: number;
+
+  user: { username: string; badge?: string };
+  characters: { id: number; name: string }[];
+  turns:    { id: string }[];
+  comments: { id: string }[];
+  totalReactions: number;
+  commentCount:   number;
+};
