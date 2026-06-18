@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
 import characterRouter from "./routes/character.routes.js";
 import reactionRoutes from "./routes/reaction.routes.js";
+import xpRoutes from "./routes/xp.routes.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/stories", characterRouter);
 app.use("/api", turnRoues);
 app.use("/api", notificationRoutes);
 app.use("/api", commentRoutes);
+app.use("/api/xp", xpRoutes);
 app.use("/api/reactions", reactionRoutes);
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
