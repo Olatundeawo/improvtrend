@@ -92,9 +92,13 @@ export async function createStory(userId, data) {
   });
 }
 
-
 export async function advanceArc(tx, storyId, newTurnCount, maxTurns) {
-  const newStage  = deriveStage(newTurnCount, maxTurns);
+  const { arcStage: previousStage } = await tx.story.findUnique({
+    where:  { id: storyId },
+    select: { arcStage: true },
+  });
+
+  const newStage   = deriveStage(newTurnCount, maxTurns);
   const isComplete = newTurnCount >= maxTurns;
 
   await tx.story.update({
@@ -105,9 +109,9 @@ export async function advanceArc(tx, storyId, newTurnCount, maxTurns) {
     },
   });
 
-  return { newTurnCount, newStage, isComplete };
+  return { newTurnCount, newStage, previousStage, isComplete };
 }
-// ── voteToComplete ───────────────────────────────────────────────────────────
+
 
 export async function voteToComplete(storyId, userId) {
   return prisma.$transaction(async (tx) => {
