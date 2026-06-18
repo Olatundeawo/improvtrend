@@ -53,6 +53,13 @@ enum StoryStatus {
   COMPLETED
 }
 
+enum XpReason {
+  TURN_WRITTEN
+  CLIMAX_BONUS
+  VIRAL_TURN
+  STORY_COMPLETION
+}
+
 model User {
   id            String      @id @default(uuid())
   username      String      @unique
@@ -63,7 +70,11 @@ model User {
 
   storyCount    Int         @default(0)
   badge         UserBadge?
-
+  xp              Int       @default(0)
+  streak          Int       @default(0)
+  lastTurnDate    DateTime?
+  
+  xpTransactions  XpTransaction[]
   stories       Story[]
   turns         Turn[]
   comments      Comment[]
@@ -178,4 +189,19 @@ model Comment {
   user            User        @relation(fields: [userId], references: [id])
 
   @@index([storyId, createdAt])
+}
+
+model XpTransaction {
+  id         String    @id @default(uuid())
+  userId     String
+  reason     XpReason
+  points     Int
+  multiplier Float     @default(1.0)
+  finalXp    Int
+  meta       Json?  
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
