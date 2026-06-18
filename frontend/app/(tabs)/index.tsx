@@ -1,14 +1,13 @@
 import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FeedList from "../components/FeedLists";
 import FeedTab from "../components/FeedTabs";
 import NewStoriesBanner from "../components/NewStories";
 import useFeed from "../hooks/useFeed";
 
-
 export default function FeedScreen() {
   const {
     stories,
-    error,
     initialLoading,
     activeTab,
     setActiveTab,
@@ -21,17 +20,14 @@ export default function FeedScreen() {
     showNewStoriesBanner,
     newStoriesCount,
     applyNewStories,
-  } = useFeed()
-  
-  
-  const { width } = useWindowDimensions()
-  const isLargeScreen = width >= 1024
+  } = useFeed();
 
-  
+  const { width }    = useWindowDimensions();
+  const insets       = useSafeAreaInsets();
+  const isLargeScreen = width >= 1024;
+
   return (
-    <View style={styles.screen}>
-
-
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View
         style={[
           styles.contentWrapper,
@@ -41,19 +37,15 @@ export default function FeedScreen() {
         <FeedTab value={activeTab} onChange={setActiveTab} />
 
         {showNewStoriesBanner && (
-          <NewStoriesBanner
-            count={newStoriesCount}
-            onPress={applyNewStories}
-          />
+          <NewStoriesBanner count={newStoriesCount} onPress={applyNewStories} />
         )}
-        
+
         <View
           style={[
             styles.mainLayout,
             isLargeScreen && styles.mainLayoutLarge,
           ]}
         >
-          {/* FEED (SCROLLS) */}
           <View style={styles.feedSection}>
             <FeedList
               stories={stories}
@@ -69,19 +61,19 @@ export default function FeedScreen() {
         </View>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FAF5FF",
+    backgroundColor: "#F1F5F9",  // neutral slate instead of purple-tinted
   },
 
   contentWrapper: {
     flex: 1,
     width: "100%",
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingTop: 12,
     overflow: "hidden",
   },
@@ -97,7 +89,7 @@ const styles = StyleSheet.create({
 
   mainLayout: {
     flex: 1,
-    paddingTop: 16,
+    paddingTop: 10,
     minHeight: 0,
   },
 
@@ -114,25 +106,5 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#5B21B6",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
-
-  rulesSection: {
-    width: 340,
-    flexShrink: 0,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#5B21B6",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-})
+});
