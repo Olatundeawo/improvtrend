@@ -13,7 +13,7 @@ async function wakeServer() {
   if (!wakingPromise) {
     wakingPromise = new Promise(async (resolve, reject) => {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000);
+      const timeout = setTimeout(() => controller.abort(), 150000);
 
       try {
         const res = await fetch(`${API_URL}/health`, {
