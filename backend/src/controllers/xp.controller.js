@@ -1,12 +1,20 @@
-import { getUserXpSummary } from "../services/xp.service.js";
+import { getUserXpSummary, assertLevel } from "../services/xp.service.js";
 
-export async function getXpSummary(req, res) {
+// export async function getXpSummary(req, res) {
+//   try {
+//     const { userId } = req.params;
+//     const summary = await getUserXpSummary(userId);
+//     res.json({ success: true, data: summary });
+//   } catch (err) {
+//     res.status(400).json({ success: false, message: err.message });
+//   }
+// }
+export async function getXpSummary(req, res, next) {
   try {
-    const { userId } = req.params;
-    const summary = await getUserXpSummary(userId);
+    const summary = await getUserXpSummary(req.user.id);
     res.json({ success: true, data: summary });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    next(err);
   }
 }
 
@@ -32,5 +40,17 @@ export async function getXpHistory(req, res) {
     });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+}
+
+export async function checkAction(req, res, next) {
+  try {
+    await assertLevel(req.user.id, req.params.action);
+    res.json({ success: true, allowed: true });
+  } catch (err) {
+    if (err.status === 403) {
+      return res.status(403).json({ success: false, allowed: false, message: err.message });
+    }
+    next(err);
   }
 }
