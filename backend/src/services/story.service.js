@@ -3,6 +3,7 @@ import parseCharacters from "../utils/parseCharacters.js";
 import { resolveBadge } from "../utils/badge.js";
 import { BADGE_META } from "../utils/badgeMeta.js";
 import { getMaxTurns, deriveStage, VOTE_THRESHOLD } from "../utils/arc.js";
+import { assertLevel } from "./xp.service.js";
 
 
 function summariseReactions(reactions) {
@@ -23,6 +24,7 @@ function formatTurn(turn) {
 
 
 export async function createStory(userId, data) {
+  await assertLevel(userId, "createStory");
   const { title, content, characters, arcSize = "SHORT" } = data;
 
   const parsedCharacters = parseCharacters(characters);
@@ -60,26 +62,32 @@ export async function createStory(userId, data) {
       include: { characters: true },
     });
 
+    // Increment storyCount and fetch existing badges in one go
     const user = await tx.user.update({
       where: { id: userId },
-      data: { storyCount: { increment: 1 } },
+      data:  { storyCount: { increment: 1 } },
+      select: {
+        storyCount: true,
+        badges: { select: { badge: true } },
+      },
     });
 
-    const newStoryCount = user.storyCount + 1;
-    const newBadge = resolveBadge(newStoryCount);
+    const newStoryCount = user.storyCount; // already incremented by Prisma
+    const ownedBadges   = new Set(user.badges.map((b) => b.badge));
+    const newBadge      = resolveBadge(newStoryCount);
+    const badgeAwarded  = newBadge && !ownedBadges.has(newBadge) ? newBadge : null;
 
-    if (newBadge && newBadge !== user.badge) {
-      await tx.user.update({
-        where: { id: userId },
-        data: { badge: newBadge },
+    if (badgeAwarded) {
+      await tx.userBadgeRecord.create({
+        data: { userId, badge: badgeAwarded },
       });
 
-      const meta = BADGE_META[newBadge];
+      const meta = BADGE_META[badgeAwarded];
       await tx.notification.create({
         data: {
           userId,
-          type: "BADGE_UNLOCKED",
-          title: `Badge Unlocked: ${meta.title}`,
+          type:    "BADGE_UNLOCKED",
+          title:   `Badge Unlocked: ${meta.title}`,
           message: meta.message,
         },
       });
@@ -87,7 +95,7 @@ export async function createStory(userId, data) {
 
     return {
       story,
-      badgeUnlocked: newBadge && newBadge !== user.badge ? newBadge : null,
+      badgeUnlocked: badgeAwarded,
     };
   });
 }
@@ -118,9 +126,9 @@ export async function voteToComplete(storyId, userId) {
     const story = await tx.story.findUnique({
       where: { id: storyId },
       select: {
-        id: true,
-        userId: true,
-        status: true,
+        id:       true,
+        userId:   true,
+        status:   true,
         maxTurns: true,
         turnCount: true,
         votes: { select: { userId: true } },
@@ -131,14 +139,11 @@ export async function voteToComplete(storyId, userId) {
     if (!story) throw new Error("Story not found");
     if (story.status === "COMPLETED") throw new Error("Story is already completed");
 
-    // Prevent duplicate votes (the @@unique constraint also guards this, but
-    // surfacing a clear error is nicer than a Prisma P2002)
     const alreadyVoted = story.votes.some((v) => v.userId === userId);
     if (alreadyVoted) throw new Error("You have already voted to complete this story");
 
     await tx.storyVote.create({ data: { storyId, userId } });
 
-    // Eligible voters = creator + everyone who has written at least one turn
     const participantIds = new Set([
       story.userId,
       ...story.turns.map((t) => t.userId),
@@ -150,16 +155,16 @@ export async function voteToComplete(storyId, userId) {
     if (shouldComplete) {
       await tx.story.update({
         where: { id: storyId },
-        data: { status: "COMPLETED", isLocked: true },
+        data:  { status: "COMPLETED", isLocked: true },
       });
     }
 
     return {
-      voted: true,
+      voted:            true,
       totalVotes,
       quorum,
       participantCount: participantIds.size,
-      completed: shouldComplete,
+      completed:        shouldComplete,
     };
   });
 }
@@ -167,7 +172,7 @@ export async function voteToComplete(storyId, userId) {
 
 export async function completeStoryByCreator(storyId, userId) {
   const story = await prisma.story.findUnique({
-    where: { id: storyId },
+    where:  { id: storyId },
     select: { userId: true, status: true },
   });
 
@@ -177,7 +182,7 @@ export async function completeStoryByCreator(storyId, userId) {
 
   return prisma.story.update({
     where: { id: storyId },
-    data: { status: "COMPLETED", isLocked: true },
+    data:  { status: "COMPLETED", isLocked: true },
   });
 }
 
@@ -189,10 +194,15 @@ export async function getStories({ page = 1, limit = 10 }) {
   const [stories, total] = await Promise.all([
     prisma.story.findMany({
       skip,
-      take: limit,
+      take:    limit,
       orderBy: { createdAt: "desc" },
       include: {
-        user:       { select: { username: true, badge: true } },
+        user: {
+          select: {
+            username: true,
+            badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
+          },
+        },
         characters: { select: { id: true, name: true } },
         comments:   { select: { id: true } },
         votes:      { select: { userId: true } },
@@ -211,13 +221,17 @@ export async function getStories({ page = 1, limit = 10 }) {
 
   const formatted = stories.map((story) => ({
     ...story,
+    user: {
+      username: story.user.username,
+      badge:    story.user.badges[0]?.badge ?? null,  // flatten for frontend
+    },
     turns: story.turns.map(formatTurn),
     totalReactions: story.turns.reduce(
       (sum, t) => sum + (t.reactions?.length ?? 0),
       0
     ),
     commentCount: story.comments.length,
-    voteCount: story.votes.length,
+    voteCount:    story.votes.length,
   }));
 
   return {
@@ -227,7 +241,7 @@ export async function getStories({ page = 1, limit = 10 }) {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      hasMore: skip + stories.length < total,
+      hasMore:    skip + stories.length < total,
     },
   };
 }
@@ -238,13 +252,18 @@ export async function getStoryById(id) {
   const story = await prisma.story.findUnique({
     where: { id },
     include: {
-      user: { select: { username: true, badge: true } },
+      user: {
+        select: {
+          username: true,
+          badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
+        },
+      },
       characters: {
         select: {
-          id: true,
-          name: true,
+          id:             true,
+          name:           true,
           claimedByUserId: true,
-          claimedBy: { select: { username: true } },
+          claimedBy:      { select: { username: true } },
         },
       },
       comments: {
@@ -267,13 +286,17 @@ export async function getStoryById(id) {
 
   return {
     ...story,
+    user: {
+      username: story.user.username,
+      badge:    story.user.badges[0]?.badge ?? null,
+    },
     turns: story.turns.map(formatTurn),
     totalReactions: story.turns.reduce(
       (sum, t) => sum + (t.reactions?.length ?? 0),
       0
     ),
     commentCount: story.comments.length,
-    voteCount: story.votes.length,
+    voteCount:    story.votes.length,
   };
 }
 
@@ -281,12 +304,12 @@ export async function getStoryById(id) {
 
 export async function getStoryByUserId(userId) {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where:  { id: userId },
     select: {
-      id: true,
-      username: true,
+      id:         true,
+      username:   true,
       storyCount: true,
-      badge: true,
+      badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
       stories: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -312,6 +335,7 @@ export async function getStoryByUserId(userId) {
 
   return {
     ...user,
+    badge: user.badges[0]?.badge ?? null,  // flatten for frontend
     stories: user.stories.map((story) => ({
       ...story,
       turns: story.turns.map(formatTurn),
@@ -320,7 +344,7 @@ export async function getStoryByUserId(userId) {
         0
       ),
       commentCount: story.comments.length,
-      voteCount: story.votes.length,
+      voteCount:    story.votes.length,
     })),
   };
 }
