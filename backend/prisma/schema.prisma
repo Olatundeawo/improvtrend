@@ -13,6 +13,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+
 enum ReactionType {
   SPICY
   PLOT_TWIST
@@ -20,15 +22,30 @@ enum ReactionType {
   BEST_LINE
 }
 
-enum UserBadge {
+enum UserLevel {
+  NEWCOMER      
+  STORYTELLER    
+  SCRIBE         
+  AUTHOR         
+  GRAND_NARRATOR 
+}
+
+enum BadgeType {
+  
   NEWBIE
   CONTRIBUTOR
   CREATOR
   TREND_STARTER
+  PLOT_TWISTER     
+  SCENE_SETTER     
+  NARRATOR_KING    
+  SPEED_WRITER     
+  CHARACTER_ACTOR
 }
 
 enum NotificationType {
   BADGE_UNLOCKED
+  LEVEL_UP        
   NEW_COMMENT
   NEW_REACTION
   TURN_RELY
@@ -36,9 +53,9 @@ enum NotificationType {
 }
 
 enum ArcSize {
-  SHORT   
-  MEDIUM 
-  EPIC 
+  SHORT
+  MEDIUM
+  EPIC
 }
 
 enum ArcStage {
@@ -67,21 +84,35 @@ model User {
   passwordHash  String
   createdAt     DateTime    @default(now())
 
-
-  storyCount    Int         @default(0)
-  badge         UserBadge?
-  xp              Int       @default(0)
-  streak          Int       @default(0)
+  // Gamification
+  xp              Int         @default(0)
+  level           UserLevel   @default(NEWCOMER)
+  streak          Int         @default(0)
   lastTurnDate    DateTime?
-  
-  xpTransactions  XpTransaction[]
-  stories       Story[]
-  turns         Turn[]
-  comments      Comment[]
-  reactions     TurnReaction[]
-  notifications Notification[]
+  storyCount      Int         @default(0)
+
+  // Relations
+  xpTransactions    XpTransaction[]
+  badges            UserBadgeRecord[] 
+  stories           Story[]
+  turns             Turn[]
+  comments          Comment[]
+  reactions         TurnReaction[]
+  notifications     Notification[]
   claimedCharacters Character[]
-  storyVotes    StoryVote[]
+  storyVotes        StoryVote[]
+}
+
+model UserBadgeRecord {
+  id          String    @id @default(uuid())
+  userId      String
+  badge       BadgeType
+  awardedAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, badge])
+  @@index([userId])
 }
 
 model Notification {
