@@ -22,6 +22,24 @@ enum ReactionType {
   BEST_LINE
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum Genre {
+  COMEDY
+  HORROR
+  ROMANCE
+  MYSTERY
+  FANTASY
+  SCI_FI
+  DRAMA
+  ADVENTURE
+  THRILLER
+  SLICE_OF_LIFE
+}
+
 enum UserLevel {
   NEWCOMER      
   STORYTELLER    
@@ -45,13 +63,14 @@ enum BadgeType {
 
 enum NotificationType {
   BADGE_UNLOCKED
-  LEVEL_UP        
+  LEVEL_UP
   NEW_COMMENT
   NEW_REACTION
   TURN_RELY
   STORY_TRENDING
+  CLAIM_EXPIRY_WARNING 
+  CLAIM_AUTO_RELEASED
 }
-
 enum ArcSize {
   SHORT
   MEDIUM
@@ -81,8 +100,17 @@ model User {
   id            String      @id @default(uuid())
   username      String      @unique
   email         String      @unique
-  passwordHash  String
+  passwordHash  String?
   createdAt     DateTime    @default(now())
+
+  // Social login
+  authProvider  AuthProvider @default(LOCAL)
+  googleId      String?      @unique
+  avatarUrl     String?
+
+  // Profile
+  bio               String?
+  genrePreferences  Genre[]   @default([])
 
   // Gamification
   xp              Int         @default(0)
@@ -166,16 +194,21 @@ model StoryVote {
 }
 
 model Character {
-  id             Int          @id @default(autoincrement())
-  name           String
-  storyId        String
+  id              Int      @id @default(autoincrement())
+  name            String
+  storyId         String
   claimedByUserId String?
 
-  turns          Turn[]
-  story          Story        @relation(fields: [storyId], references: [id])
-  claimedBy       User?       @relation(fields: [claimedByUserId], references: [id])
+  claimExpiresAt  DateTime?
+  lastTurnAt      DateTime?
+  warningSentAt   DateTime?
+
+  turns     Turn[]
+  story     Story   @relation(fields: [storyId], references: [id])
+  claimedBy User?   @relation(fields: [claimedByUserId], references: [id])
 
   @@unique([name, storyId])
+  @@index([claimExpiresAt])
 }
 
 model Turn {
@@ -204,7 +237,7 @@ model TurnReaction {
   turn         Turn         @relation(fields: [turnId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
 
-  @@unique([turnId, userId, type]) 
+  @@unique([turnId, userId]) 
   @@index([turnId])
   @@index([userId])
 }
