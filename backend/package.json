@@ -2,10 +2,14 @@
   "dependencies": {
     "@prisma/client": "^6.19.1",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "google-auth-library": "^10.7.0",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "node-cron": "^4.5.0",
     "prisma": "^6.19.1"
   },
   "name": "backend",
