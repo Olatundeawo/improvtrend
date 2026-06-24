@@ -1,4 +1,6 @@
-import { registerUser, loginUser } from "../services/auth.service.js";
+import { registerUser, loginUser, updateProfile, getProfile } from "../services/auth.service.js";
+import { uploadAvatar } from "../services/upload.service.js";
+
 
 export async function register(req, res) {
   try {
@@ -61,4 +63,41 @@ export async function login(req, res) {
   }
     res.status(400).json({ error: err.message });
   }
+}
+
+export async function getProfileHandler(req, res) {
+    try {
+        const user = await getProfile(req.user.id);
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+}
+
+export async function updateProfileHandler(req, res) {
+    try {
+        const { bio, genrePreferences } = req.body;
+
+        let avatarUrl;
+        if (req.file) {
+            avatarUrl = await uploadAvatar(req.file.buffer);
+        }
+
+        // genrePreferences may arrive as a JSON string if sent via multipart/form-data
+        const parsedGenres = genrePreferences
+            ? (typeof genrePreferences === "string" ? JSON.parse(genrePreferences) : genrePreferences)
+            : undefined;
+
+        console.log("userId from token:", req.user.id);
+
+        const user = await updateProfile(req.user.id, {
+            bio,
+            avatarUrl,
+            genrePreferences: parsedGenres,
+        });
+
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
 }
