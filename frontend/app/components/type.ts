@@ -39,6 +39,7 @@ export type Turns = {
     characters: Character[];
     user: {
         username: string;
+        avatarUrl?: string | null;
       };
     upvotes: Upvote[]
 }
@@ -79,7 +80,7 @@ export type Story = {
   status:    StoryStatus;
   voteCount: number;
 
-  user: { username: string; badge?: string };
+  user: { username: string; badge?: string, avatarUrl?: string | null; };
   characters: { id: number; name: string }[];
   turns:    { id: string }[];
   comments: { id: string }[];
