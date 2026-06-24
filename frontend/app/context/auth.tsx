@@ -7,6 +7,9 @@ type User = {
   email: string;
   token: string;
   createdAt: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  genrePreferences?: string[];
 };
 
 type AuthContextType = {
@@ -14,6 +17,7 @@ type AuthContextType = {
   loading: boolean;
   login: (userData: User) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<User>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -44,8 +48,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.removeItem("user");
   };
 
+  const updateUser = async (patch: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      AsyncStorage.setItem("user", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
