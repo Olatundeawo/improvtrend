@@ -1,5 +1,6 @@
 import {
   FlatList,
+  Image,
   RefreshControl,
   StyleSheet,
   Text,
@@ -54,7 +55,6 @@ const ARC_STAGE_LABEL: Record<ArcStage, string> = {
   RESOLUTION: "Resolution",
 };
 
-// Which segment index (0-3) is each stage?
 const STAGE_INDEX: Record<ArcStage, number> = {
   SETUP: 0, RISING: 1, CLIMAX: 2, RESOLUTION: 3,
 };
@@ -82,18 +82,13 @@ function ArcProgress({
   maxTurns: number;
   status: string;
 }) {
-  const col      = C.arc[stage];
-  const progress = maxTurns > 0 ? Math.min(turnCount / maxTurns, 1) : 0;
-  const pct      = Math.round(progress * 100);
+  const col         = C.arc[stage];
   const isCompleted = status === "COMPLETED";
-
-  // 4 segment markers for the 4 stages
   const STAGES: ArcStage[] = ["SETUP", "RISING", "CLIMAX", "RESOLUTION"];
-  const activeIdx = STAGE_INDEX[stage];
+  const activeIdx   = STAGE_INDEX[stage];
 
   return (
     <View style={arcStyles.progressBlock}>
-      {/* top row: stage badge + turn counter */}
       <View style={arcStyles.progressHeader}>
         <ArcBadge stage={stage} />
         <Text style={arcStyles.turnCount}>
@@ -103,13 +98,11 @@ function ArcProgress({
         </Text>
       </View>
 
-      {/* segmented track */}
       <View style={arcStyles.trackRow}>
         {STAGES.map((s, i) => {
           const segCol   = C.arc[s];
           const isFilled = i < activeIdx || isCompleted;
           const isActive = i === activeIdx && !isCompleted;
-          // partial fill for the active segment
           const activePct =
             isActive && maxTurns > 0
               ? `${Math.round(
@@ -140,7 +133,9 @@ function ArcProgress({
                   />
                 )}
               </View>
-              <Text style={arcStyles.segLabel}>{s.charAt(0) + s.slice(1).toLowerCase()}</Text>
+              <Text style={arcStyles.segLabel}>
+                {s.charAt(0) + s.slice(1).toLowerCase()}
+              </Text>
             </View>
           );
         })}
@@ -149,7 +144,6 @@ function ArcProgress({
   );
 }
 
-// rough stage boundaries matching arc.js (25% / 65% / 85% / 100%)
 function getStageStart(stage: ArcStage, maxTurns: number): number {
   const b = {
     SETUP:      0,
@@ -173,15 +167,30 @@ function getStageWidth(stage: ArcStage, maxTurns: number): number {
 // ── types ─────────────────────────────────────────────────────────────────────
 
 type FeedListProps = {
-  stories:      Story[];
-  onStoryPress: (id: string) => void;
-  isLoading?:   boolean;
-  refreshing?:  boolean;
-  onRetry?:     () => void;
-  onRefresh?:   () => void;
+  stories:       Story[];
+  onStoryPress:  (id: string) => void;
+  isLoading?:    boolean;
+  refreshing?:   boolean;
+  onRetry?:      () => void;
+  onRefresh?:    () => void;
   onEndReached?: () => void;
-  hasMore?:     boolean;
+  hasMore?:      boolean;
 };
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+function StoryAvatar({ avatarUrl, username }: { avatarUrl?: string | null; username: string }) {
+  if (avatarUrl) {
+    return <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />;
+  }
+  return (
+    <View style={styles.avatarPlaceholder}>
+      <Text style={styles.avatarText}>
+        {username.charAt(0).toUpperCase()}
+      </Text>
+    </View>
+  );
+}
 
 // ── FeedList ──────────────────────────────────────────────────────────────────
 
@@ -195,7 +204,7 @@ export default function FeedList({
   onEndReached,
   hasMore,
 }: FeedListProps) {
-  const { width } = useWindowDimensions();
+  const { width }     = useWindowDimensions();
   const isTabletOrWeb = width >= 768;
 
   if (isLoading && stories.length === 0) return <FeedSkeleton count={5} />;
@@ -270,11 +279,10 @@ function StoryCard({
       {/* ── HEADER ── */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {item.user.username.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <StoryAvatar
+            avatarUrl={item.user.avatarUrl}
+            username={item.user.username}
+          />
           <View>
             <Text style={styles.username}>{item.user.username}</Text>
             <Text style={styles.time}>{formatTime(item.createdAt)}</Text>
@@ -282,7 +290,6 @@ function StoryCard({
         </View>
 
         <View style={styles.headerRight}>
-          {/* status pill */}
           <View style={[styles.statusPill, { backgroundColor: statusCol.bg }]}>
             <Text style={[styles.statusText, { color: statusCol.text }]}>
               {isCompleted ? "Completed" : "Active"}
@@ -396,14 +403,8 @@ function EmptyFeed({ onRetry }: { onRetry?: () => void }) {
 // ── styles ────────────────────────────────────────────────────────────────────
 
 const arcStyles = StyleSheet.create({
-  progressBlock: {
-    gap: 10,
-  },
-  progressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  progressBlock:  { gap: 10 },
+  progressHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -412,40 +413,14 @@ const arcStyles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontFamily: FONT.semibold,
-  },
-  turnCount: {
-    fontSize: 11,
-    fontFamily: FONT.medium,
-    color: C.text.tertiary,
-  },
-  trackRow: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  segmentOuter: {
-    flex: 1,
-    gap: 4,
-  },
-  segmentTrack: {
-    height: 5,
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  segmentGap: {
-    // gap between segments already handled by trackRow gap
-  },
-  segmentFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
+  dot:       { width: 7, height: 7, borderRadius: 4 },
+  badgeText: { fontSize: 12, fontFamily: FONT.semibold },
+  turnCount: { fontSize: 11, fontFamily: FONT.medium, color: C.text.tertiary },
+  trackRow:  { flexDirection: "row", gap: 4 },
+  segmentOuter: { flex: 1, gap: 4 },
+  segmentTrack: { height: 5, borderRadius: 999, overflow: "hidden" },
+  segmentGap:   {},
+  segmentFill:  { height: "100%", borderRadius: 999 },
   segLabel: {
     fontSize: 9,
     fontFamily: FONT.medium,
@@ -455,7 +430,7 @@ const arcStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  list: { paddingVertical: 8 },
+  list:     { paddingVertical: 8 },
   listWide: { paddingHorizontal: 24 },
 
   card: {
@@ -472,28 +447,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardWide: {
-    maxWidth: 720,
-    alignSelf: "center",
-    width: "100%",
-  },
+  cardWide: { maxWidth: 720, alignSelf: "center", width: "100%" },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+  header:      { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  userInfo:    { flexDirection: "row", alignItems: "center", gap: 10 },
 
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  // Avatar — shared dimensions, two visual variants
   avatarPlaceholder: {
     width: 40,
     height: 40,
@@ -502,32 +462,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarText: {
-    fontSize: 16,
-    fontFamily: FONT.semibold,
-    color: C.bg,
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.border, // placeholder colour while image loads
   },
-  username: {
-    fontSize: 14,
-    fontFamily: FONT.semibold,
-    color: C.text.primary,
-  },
-  time: {
-    fontSize: 11,
-    fontFamily: FONT.regular,
-    color: C.text.secondary,
-    marginTop: 2,
-  },
+  avatarText: { fontSize: 16, fontFamily: FONT.semibold, color: C.bg },
 
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  statusText: {
-    fontSize: 11,
-    fontFamily: FONT.semibold,
-  },
+  username: { fontSize: 14, fontFamily: FONT.semibold, color: C.text.primary },
+  time:     { fontSize: 11, fontFamily: FONT.regular, color: C.text.secondary, marginTop: 2 },
+
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  statusText: { fontSize: 11, fontFamily: FONT.semibold },
 
   openButton: {
     paddingHorizontal: 14,
@@ -537,17 +484,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.blue + "30",
   },
-  openText: {
-    fontSize: 13,
-    fontFamily: FONT.semibold,
-    color: C.blue,
-  },
+  openText: { fontSize: 13, fontFamily: FONT.semibold, color: C.blue },
 
-  divider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginVertical: 14,
-  },
+  divider: { height: 1, backgroundColor: C.border, marginVertical: 14 },
 
   title: {
     fontSize: 19,
@@ -564,11 +503,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  charactersWrapper: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  charactersWrapper: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   characterChip: {
     backgroundColor: C.surface,
     paddingHorizontal: 12,
@@ -577,11 +512,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  characterText: {
-    fontSize: 12,
-    fontFamily: FONT.medium,
-    color: C.text.secondary,
-  },
+  characterText: { fontSize: 12, fontFamily: FONT.medium, color: C.text.secondary },
 
   engagementRow: {
     flexDirection: "row",
@@ -590,25 +521,10 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 12,
   },
-  engagementGroup: {
-    flexDirection: "row",
-    gap: 20,
-  },
-  engagementItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  engagementCount: {
-    fontSize: 14,
-    fontFamily: FONT.bold,
-    color: C.primary,
-    marginRight: 4,
-  },
-  engagementLabel: {
-    fontSize: 12,
-    fontFamily: FONT.regular,
-    color: C.text.secondary,
-  },
+  engagementGroup: { flexDirection: "row", gap: 20 },
+  engagementItem:  { flexDirection: "row", alignItems: "center" },
+  engagementCount: { fontSize: 14, fontFamily: FONT.bold, color: C.primary, marginRight: 4 },
+  engagementLabel: { fontSize: 12, fontFamily: FONT.regular, color: C.text.secondary },
 
   ctaButton: {
     backgroundColor: C.accent,
@@ -621,16 +537,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  ctaButtonDone: {
-    backgroundColor: C.surface,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  ctaText: {
-    color: C.bg,
-    fontSize: 14,
-    fontFamily: FONT.semibold,
-  },
+  ctaButtonDone: { backgroundColor: C.surface, shadowOpacity: 0, elevation: 0 },
+  ctaText:       { color: C.bg, fontSize: 14, fontFamily: FONT.semibold },
 
   emptyContainer: {
     flex: 1,
@@ -658,21 +566,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  retryText: {
-    color: C.bg,
-    fontSize: 14,
-    fontFamily: FONT.semibold,
-  },
+  retryText: { color: C.bg, fontSize: 14, fontFamily: FONT.semibold },
 
-  footer: { paddingVertical: 24, alignItems: "center" },
-  footerText: {
-    fontSize: 14,
-    color: C.text.secondary,
-    fontFamily: FONT.medium,
-  },
-  footerDone: {
-    fontSize: 14,
-    color: C.primary,
-    fontFamily: FONT.semibold,
-  },
+  footer:      { paddingVertical: 24, alignItems: "center" },
+  footerText:  { fontSize: 14, color: C.text.secondary, fontFamily: FONT.medium },
+  footerDone:  { fontSize: 14, color: C.primary, fontFamily: FONT.semibold },
 });
