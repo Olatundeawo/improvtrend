@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,7 +15,6 @@ import { useAuth } from "../context/auth";
 import useUserStories from "../hooks/useUserStories";
 import useXpSummary from "../hooks/useXpSummary";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const REASON_LABELS: Record<string, string> = {
   TURN_WRITTEN:     "✍️  Turns written",
@@ -41,6 +41,19 @@ const BADGE_EMOJI: Record<string, string> = {
   NARRATOR_KING:   "👑",
   SPEED_WRITER:    "⚡",
   CHARACTER_ACTOR: "🎪",
+};
+
+const GENRE_LABELS: Record<string, string> = {
+  COMEDY:       "😂 Comedy",
+  HORROR:       "👻 Horror",
+  ROMANCE:      "💕 Romance",
+  MYSTERY:      "🔍 Mystery",
+  FANTASY:      "🧙 Fantasy",
+  SCI_FI:       "🚀 Sci-Fi",
+  DRAMA:        "🎭 Drama",
+  ADVENTURE:    "⚔️ Adventure",
+  THRILLER:     "😰 Thriller",
+  SLICE_OF_LIFE:"☕ Slice of Life",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,7 +113,6 @@ function LevelCard({
         </Text>
       </View>
 
-      {/* Progress bar */}
       <View style={styles.progressTrack}>
         <View
           style={[
@@ -139,6 +151,45 @@ function BadgesRow({ badges }: BadgesRowProps) {
             <Text style={styles.badgeChipText}>
               {badge.replace(/_/g, " ")}
             </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function AvatarDisplay({ avatarUrl, username }: { avatarUrl?: string | null; username: string }) {
+  if (avatarUrl) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={styles.avatarImage}
+      />
+    );
+  }
+  return (
+    <View style={styles.avatarFallback}>
+      <Text style={styles.avatarText}>
+        {username.charAt(0).toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Genre Chips ──────────────────────────────────────────────────────────────
+
+function GenreChips({ genres }: { genres: string[] }) {
+  if (!genres || genres.length === 0) return null;
+
+  return (
+    <View style={styles.genreSection}>
+      <Text style={styles.sectionLabel}>Genre preferences</Text>
+      <View style={styles.genreWrap}>
+        {genres.map((g) => (
+          <View key={g} style={styles.genreChip}>
+            <Text style={styles.genreChipText}>{GENRE_LABELS[g] ?? g}</Text>
           </View>
         ))}
       </View>
@@ -194,18 +245,13 @@ export default function Profile() {
 
         {/* ── Header ── */}
         <View style={styles.topRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user.username.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <AvatarDisplay avatarUrl={user.avatarUrl} username={user.username} />
 
           <View style={styles.info}>
             <Text style={styles.username}>{user.username}</Text>
             {joinedDate && (
               <Text style={styles.joined}>Joined {joinedDate}</Text>
             )}
-            {/* Latest badge pill */}
             {xpData?.badge && (
               <View style={styles.badgePill}>
                 <Text style={styles.badgePillText}>
@@ -215,7 +261,28 @@ export default function Profile() {
               </View>
             )}
           </View>
+
+          {/* Edit button */}
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push("/components/edit-profile")}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* ── Bio ── */}
+        {user.bio ? (
+          <Text style={styles.bio}>{user.bio}</Text>
+        ) : (
+          <TouchableOpacity onPress={() => router.push("/components/edit-profile")} activeOpacity={0.7}>
+            <Text style={styles.bioEmpty}>Add a bio…</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* ── Genre preferences ── */}
+        <GenreChips genres={user.genrePreferences ?? []} />
 
         {/* ── XP / Stats area ── */}
         {xpLoading ? (
@@ -228,6 +295,8 @@ export default function Profile() {
           <XpErrorBanner onRetry={refetchXp} />
         ) : xpData ? (
           <>
+            <View style={styles.dividerThin} />
+
             {/* Stats row */}
             <View style={styles.stats}>
               <View style={styles.stat}>
@@ -257,7 +326,7 @@ export default function Profile() {
               )}
             </View>
 
-            {/* Level card with progress bar */}
+            {/* Level card */}
             <LevelCard
               level={xpData.level}
               levelMeta={xpData.levelMeta}
@@ -267,7 +336,7 @@ export default function Profile() {
               totalXp={xpData.totalXp}
             />
 
-            {/* All earned badges */}
+            {/* Badges */}
             <BadgesRow badges={xpData.badges} />
 
             {/* XP Breakdown */}
@@ -351,16 +420,20 @@ const styles = StyleSheet.create({
   cardLarge: { maxWidth: 900, alignSelf: "center", width: "100%", padding: 28 },
 
   // Header
-  topRow:     { flexDirection: "row", alignItems: "center" },
-  avatar: {
+  topRow:       { flexDirection: "row", alignItems: "center" },
+  avatarImage: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: "#e2e8f0",
+  },
+  avatarFallback: {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: "#2563eb",
     justifyContent: "center", alignItems: "center",
   },
-  avatarText: { color: "#ffffff", fontSize: 30, fontWeight: "700" },
-  info:       { marginLeft: 16, flex: 1 },
-  username:   { fontSize: 22, fontWeight: "700", color: "#0f172a" },
-  joined:     { fontSize: 14, color: "#64748b", marginTop: 4 },
+  avatarText:   { color: "#ffffff", fontSize: 30, fontWeight: "700" },
+  info:         { marginLeft: 16, flex: 1 },
+  username:     { fontSize: 22, fontWeight: "700", color: "#0f172a" },
+  joined:       { fontSize: 14, color: "#64748b", marginTop: 4 },
   badgePill: {
     marginTop: 6,
     alignSelf: "flex-start",
@@ -373,8 +446,49 @@ const styles = StyleSheet.create({
   },
   badgePillText: { fontSize: 12, fontWeight: "700", color: "#854d0e" },
 
+  // Edit button
+  editButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    backgroundColor: "#f8fafc",
+  },
+  editButtonText: { fontSize: 13, fontWeight: "600", color: "#334155" },
+
+  // Bio
+  bio: {
+    marginTop: 14,
+    fontSize: 14,
+    color: "#475569",
+    lineHeight: 20,
+  },
+  bioEmpty: {
+    marginTop: 14,
+    fontSize: 14,
+    color: "#cbd5e1",
+    fontStyle: "italic",
+  },
+
+  // Genre chips
+  genreSection: { marginTop: 14 },
+  genreWrap:    { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  genreChip: {
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  genreChipText: { fontSize: 12, fontWeight: "600", color: "#1d4ed8" },
+
+  // Thin divider between profile section and stats
+  dividerThin: { height: 1, backgroundColor: "#f1f5f9", marginVertical: 18 },
+
   // Stats
-  stats:            { flexDirection: "row", marginTop: 24, gap: 28, flexWrap: "wrap" },
+  stats:            { flexDirection: "row", gap: 28, flexWrap: "wrap" },
   stat:             {},
   statNumber:       { fontSize: 20, fontWeight: "700", color: "#0f172a" },
   multiplierNumber: { color: "#d97706" },
@@ -407,7 +521,10 @@ const styles = StyleSheet.create({
 
   // Badges
   badgesSection: { marginTop: 20 },
-  sectionLabel:  { fontSize: 12, fontWeight: "600", color: "#94a3b8", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 },
+  sectionLabel: {
+    fontSize: 12, fontWeight: "600", color: "#94a3b8",
+    marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5,
+  },
   badgesWrap:    { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   badgeChip: {
     flexDirection: "row",
