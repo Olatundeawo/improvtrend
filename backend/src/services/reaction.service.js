@@ -8,44 +8,42 @@ export async function toggleReaction(turnId, userId, type) {
   }
 
   const existing = await prisma.turnReaction.findUnique({
-    where: {
-      turnId_userId_type: { turnId, userId, type },
-    },
+    where: { turnId_userId: { turnId, userId } },
   });
 
-  if (existing) {
+  if (existing?.type === type) {
     await prisma.turnReaction.delete({ where: { id: existing.id } });
     return { reacted: false, type };
   }
 
-  await prisma.turnReaction.create({
-    data: { turnId, userId, type },
+  await prisma.turnReaction.upsert({
+    where:  { turnId_userId: { turnId, userId } },
+    update: { type, createdAt: new Date() },
+    create: { turnId, userId, type },
   });
 
   return { reacted: true, type };
 }
 
 export async function getReactionSummary(turnId, requestingUserId) {
-  const [reactions, userReactions] = await Promise.all([
+  const [reactions, userReaction] = await Promise.all([
     prisma.turnReaction.groupBy({
-      by: ["type"],
+      by:    ["type"],
       where: { turnId },
       _count: { type: true },
     }),
-    prisma.turnReaction.findMany({
-      where: { turnId, userId: requestingUserId },
+    prisma.turnReaction.findUnique({
+      where:  { turnId_userId: { turnId, userId: requestingUserId } },
       select: { type: true },
     }),
   ]);
-
-  const userReactionTypes = new Set(userReactions.map((r) => r.type));
 
   return VALID_REACTIONS.map((type) => {
     const found = reactions.find((r) => r.type === type);
     return {
       type,
-      count: found?._count.type ?? 0,
-      reacted: userReactionTypes.has(type),
+      count:   found?._count.type ?? 0,
+      reacted: userReaction?.type === type,
     };
   });
 }
@@ -53,30 +51,29 @@ export async function getReactionSummary(turnId, requestingUserId) {
 export async function getBulkReactionSummary(turnIds, requestingUserId) {
   const [reactions, userReactions] = await Promise.all([
     prisma.turnReaction.groupBy({
-      by: ["turnId", "type"],
+      by:    ["turnId", "type"],
       where: { turnId: { in: turnIds } },
       _count: { type: true },
     }),
     prisma.turnReaction.findMany({
-      where: { turnId: { in: turnIds }, userId: requestingUserId },
+      where:  { turnId: { in: turnIds }, userId: requestingUserId },
       select: { turnId: true, type: true },
     }),
   ]);
 
-  const userReactionSet = new Set(
-    userReactions.map((r) => `${r.turnId}:${r.type}`)
+  // One active reaction per user per turn — key by turnId only
+  const userReactionMap = Object.fromEntries(
+    userReactions.map((r) => [r.turnId, r.type])
   );
 
   const result = {};
   for (const turnId of turnIds) {
     result[turnId] = VALID_REACTIONS.map((type) => {
-      const found = reactions.find(
-        (r) => r.turnId === turnId && r.type === type
-      );
+      const found = reactions.find((r) => r.turnId === turnId && r.type === type);
       return {
         type,
-        count: found?._count.type ?? 0,
-        reacted: userReactionSet.has(`${turnId}:${type}`),
+        count:   found?._count.type ?? 0,
+        reacted: userReactionMap[turnId] === type,
       };
     });
   }
@@ -86,11 +83,11 @@ export async function getBulkReactionSummary(turnIds, requestingUserId) {
 
 export async function getBestTurn(storyId) {
   const turns = await prisma.turn.findMany({
-    where: { storyId },
+    where:   { storyId },
     include: {
-      _count: { select: { reactions: true } },
+      _count:    { select: { reactions: true } },
       character: { select: { name: true } },
-      user: { select: { username: true } },
+      user:      { select: { username: true } },
     },
   });
 
