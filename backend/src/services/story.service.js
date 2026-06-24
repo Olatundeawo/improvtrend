@@ -62,7 +62,6 @@ export async function createStory(userId, data) {
       include: { characters: true },
     });
 
-    // Increment storyCount and fetch existing badges in one go
     const user = await tx.user.update({
       where: { id: userId },
       data:  { storyCount: { increment: 1 } },
@@ -72,7 +71,7 @@ export async function createStory(userId, data) {
       },
     });
 
-    const newStoryCount = user.storyCount; // already incremented by Prisma
+    const newStoryCount = user.storyCount;
     const ownedBadges   = new Set(user.badges.map((b) => b.badge));
     const newBadge      = resolveBadge(newStoryCount);
     const badgeAwarded  = newBadge && !ownedBadges.has(newBadge) ? newBadge : null;
@@ -126,10 +125,10 @@ export async function voteToComplete(storyId, userId) {
     const story = await tx.story.findUnique({
       where: { id: storyId },
       select: {
-        id:       true,
-        userId:   true,
-        status:   true,
-        maxTurns: true,
+        id:        true,
+        userId:    true,
+        status:    true,
+        maxTurns:  true,
         turnCount: true,
         votes: { select: { userId: true } },
         turns: { select: { userId: true } },
@@ -148,8 +147,8 @@ export async function voteToComplete(storyId, userId) {
       story.userId,
       ...story.turns.map((t) => t.userId),
     ]);
-    const totalVotes = story.votes.length + 1;
-    const quorum     = Math.ceil(participantIds.size * VOTE_THRESHOLD);
+    const totalVotes     = story.votes.length + 1;
+    const quorum         = Math.ceil(participantIds.size * VOTE_THRESHOLD);
     const shouldComplete = totalVotes >= quorum;
 
     if (shouldComplete) {
@@ -199,7 +198,8 @@ export async function getStories({ page = 1, limit = 10 }) {
       include: {
         user: {
           select: {
-            username: true,
+            username:  true,
+            avatarUrl: true,
             badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
           },
         },
@@ -209,7 +209,7 @@ export async function getStories({ page = 1, limit = 10 }) {
         turns: {
           orderBy: { createdAt: "asc" },
           include: {
-            user:      { select: { username: true } },
+            user:      { select: { username: true, avatarUrl: true } },
             character: { select: { id: true, name: true } },
             reactions: { select: { type: true } },
           },
@@ -222,8 +222,9 @@ export async function getStories({ page = 1, limit = 10 }) {
   const formatted = stories.map((story) => ({
     ...story,
     user: {
-      username: story.user.username,
-      badge:    story.user.badges[0]?.badge ?? null,  // flatten for frontend
+      username:  story.user.username,
+      avatarUrl: story.user.avatarUrl ?? null,
+      badge:     story.user.badges[0]?.badge ?? null,
     },
     turns: story.turns.map(formatTurn),
     totalReactions: story.turns.reduce(
@@ -254,16 +255,17 @@ export async function getStoryById(id) {
     include: {
       user: {
         select: {
-          username: true,
+          username:  true,
+          avatarUrl: true,
           badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
         },
       },
       characters: {
         select: {
-          id:             true,
-          name:           true,
+          id:              true,
+          name:            true,
           claimedByUserId: true,
-          claimedBy:      { select: { username: true } },
+          claimedBy:       { select: { username: true } },
         },
       },
       comments: {
@@ -274,7 +276,7 @@ export async function getStoryById(id) {
       turns: {
         orderBy: { createdAt: "asc" },
         include: {
-          user:      { select: { username: true } },
+          user:      { select: { username: true, avatarUrl: true } },
           character: { select: { id: true, name: true } },
           reactions: { select: { type: true, userId: true } },
         },
@@ -287,8 +289,9 @@ export async function getStoryById(id) {
   return {
     ...story,
     user: {
-      username: story.user.username,
-      badge:    story.user.badges[0]?.badge ?? null,
+      username:  story.user.username,
+      avatarUrl: story.user.avatarUrl ?? null,
+      badge:     story.user.badges[0]?.badge ?? null,
     },
     turns: story.turns.map(formatTurn),
     totalReactions: story.turns.reduce(
@@ -335,7 +338,7 @@ export async function getStoryByUserId(userId) {
 
   return {
     ...user,
-    badge: user.badges[0]?.badge ?? null,  // flatten for frontend
+    badge: user.badges[0]?.badge ?? null,
     stories: user.stories.map((story) => ({
       ...story,
       turns: story.turns.map(formatTurn),
