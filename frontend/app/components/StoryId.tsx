@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Dimensions,
   FlatList,
   Modal,
@@ -14,6 +15,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 
 import FeedHeader from "../components/FeedHeader";
 import FeedSkeleton from "../components/FeedSkeleton";
@@ -279,6 +282,169 @@ const rb = StyleSheet.create({
   labelActive:{ color: "#7C3AED", fontWeight: "700" },
 });
 
+// ── share helpers ─────────────────────────────────────────────────────────────
+
+function getMostReactedTurn(
+  turns: any[],
+  reactionMap: Record<string, ReactionSummary[]>
+) {
+  let best: any = null;
+  let bestTotal = 0;
+
+  for (const t of turns) {
+    const summary = reactionMap[t.id] ?? [];
+    const total   = summary.reduce((sum, r) => sum + r.count, 0);
+    if (total > bestTotal) {
+      bestTotal = total;
+      best      = t;
+    }
+  }
+  return best;
+}
+
+function getTopReactionSummary(
+  turnId: string,
+  reactionMap: Record<string, ReactionSummary[]>
+) {
+  const summary = reactionMap[turnId] ?? [];
+  let top: ReactionSummary | null = null;
+  for (const r of summary) {
+    if (!top || r.count > top.count) top = r;
+  }
+  if (!top || top.count === 0) return null;
+  const meta = REACTION_META[top.type];
+  return `${meta.emoji} ${top.count} ${meta.label}`;
+}
+
+// ── ShareCard (captured + shared as an image) ─────────────────────────────────
+
+const CARD_WIDTH = 340;
+
+function ShareCard({
+  story,
+  turns,
+  mostReactedTurn,
+  topReactionLabel,
+}: {
+  story: any;
+  turns: any[];
+  mostReactedTurn: any | null;
+  topReactionLabel: string | null;
+}) {
+  return (
+    <View style={sc.card}>
+      {/* watermark header */}
+      <View style={sc.header}>
+        <View style={sc.logoMark}>
+          <Ionicons name="book" size={14} color="#FFFFFF" />
+        </View>
+        <Text style={sc.brand}>ImprovTrend</Text>
+      </View>
+
+      <Text style={sc.title}>{story.title}</Text>
+      <Text style={sc.meta}>
+        {turns.length} {turns.length === 1 ? "turn" : "turns"} · Completed story
+      </Text>
+
+      {mostReactedTurn && (
+        <View style={sc.quoteBox}>
+          <Text style={sc.quoteMark}>"</Text>
+          <Text style={sc.quoteText}>
+            {mostReactedTurn.content.length > 220
+              ? mostReactedTurn.content.slice(0, 220).trim() + "…"
+              : mostReactedTurn.content}
+          </Text>
+          <Text style={sc.quoteAttribution}>
+            — {mostReactedTurn.character?.name ?? "Unknown"}
+            {topReactionLabel ? `  ·  ${topReactionLabel}` : ""}
+          </Text>
+        </View>
+      )}
+
+      <View style={sc.divider} />
+      <Text style={sc.sectionTitle}>The full story</Text>
+
+      {turns.map((t) => (
+        <View key={t.id} style={sc.turnRow}>
+          <Text style={sc.turnCharacter}>{t.character?.name ?? "Unknown"}</Text>
+          <Text style={sc.turnContent}>{t.content}</Text>
+        </View>
+      ))}
+
+      <View style={sc.footer}>
+        <Text style={sc.footerText}>Made with ImprovTrend</Text>
+        <Text style={sc.footerSub}>Collaborative storytelling, one turn at a time</Text>
+      </View>
+    </View>
+  );
+}
+
+const sc = StyleSheet.create({
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    alignSelf: "center",
+  },
+  header:   { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 },
+  logoMark: { width: 26, height: 26, borderRadius: 8, backgroundColor: "#7C3AED", alignItems: "center", justifyContent: "center" },
+  brand:    { fontSize: 14, fontWeight: "800", color: "#7C3AED", letterSpacing: 0.3 },
+
+  title: { fontSize: 20, fontWeight: "800", color: "#1F2937", marginBottom: 4 },
+  meta:  { fontSize: 12, color: "#9CA3AF", marginBottom: 16 },
+
+  quoteBox: {
+    backgroundColor: "#F5F3FF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    padding: 16,
+    marginBottom: 20,
+  },
+  quoteMark:        { fontSize: 28, color: "#C4B5FD", fontWeight: "800", lineHeight: 28, marginBottom: 2 },
+  quoteText:        { fontSize: 15, lineHeight: 22, color: "#3730A3", fontStyle: "italic" },
+  quoteAttribution: { marginTop: 10, fontSize: 12, fontWeight: "700", color: "#7C3AED" },
+
+  divider:      { height: 1, backgroundColor: "#F3F4F6", marginBottom: 14 },
+  sectionTitle: { fontSize: 12, fontWeight: "700", color: "#9CA3AF", letterSpacing: 0.5, marginBottom: 12, textTransform: "uppercase" },
+
+  turnRow:       { marginBottom: 14 },
+  turnCharacter: { fontSize: 13, fontWeight: "700", color: "#7C3AED", marginBottom: 2 },
+  turnContent:   { fontSize: 14, lineHeight: 21, color: "#374151" },
+
+  footer:     { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: "#F3F4F6", alignItems: "center" },
+  footerText: { fontSize: 13, fontWeight: "800", color: "#7C3AED" },
+  footerSub:  { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
+});
+
+const shareStyles = StyleSheet.create({
+  shareTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "#F3E8FF",
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    marginBottom: 24,
+  },
+  shareTriggerText: { fontSize: 14, fontWeight: "700", color: "#7C3AED" },
+
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 16 },
+  sheet:   { backgroundColor: "#FFFFFF", borderRadius: 20, maxHeight: "85%", padding: 16, alignSelf: "center", width: "100%", maxWidth: 420 },
+
+  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  sheetTitle:  { fontSize: 16, fontWeight: "700", color: "#1F2937" },
+
+  previewScroll:        { maxHeight: 480 },
+  previewScrollContent: { paddingVertical: 8, alignItems: "center" },
+
+  shareBtn: { flexDirection: "row" },
+});
+
 // ── StoryScreen ───────────────────────────────────────────────────────────────
 
 export default function StoryScreen() {
@@ -335,6 +501,37 @@ export default function StoryScreen() {
   const [newCharName, setNewCharName]   = useState("");
   const [isAddingChar, setIsAddingChar] = useState(false);
 
+  // ── share ──────────────────────────────────────────────────────────────────
+  const shareViewRef = useRef<View>(null);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+
+  async function handleConfirmShare() {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureRef(shareViewRef, {
+        format: "png",
+        quality: 1,
+      });
+      const available = await Sharing.isAvailableAsync();
+      if (available) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "image/png",
+          dialogTitle: "Share this story",
+          UTI: "public.png",
+        });
+      } else {
+        Alert.alert("Sharing isn't available", "Your device doesn't support the native share sheet.");
+      }
+    } catch (e) {
+      console.warn("Failed to share story", e);
+      Alert.alert("Couldn't create the share image", "Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  }
+
   // ── feedback ───────────────────────────────────────────────────────────────
   const [feedback, setFeedback] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
@@ -375,6 +572,9 @@ export default function StoryScreen() {
   const selectedCharacter = characters.find((c) => c.id === characterId);
   const canSubmit  = Boolean(selectedCharacter && text.trim() && !isSubmitting && !isLocked);
   const atCharLimit = characters.length >= 6;
+
+  const mostReactedTurn  = hasTurns ? getMostReactedTurn(turns, reactionMap) : null;
+  const topReactionLabel = mostReactedTurn ? getTopReactionSummary(mostReactedTurn.id, reactionMap) : null;
 
   function isSelectable(char: Character) {
     return char.claimedByUserId === null || char.claimedByUserId === currentUserId;
@@ -481,14 +681,24 @@ export default function StoryScreen() {
             </View>
           )}
 
-          {/* ── LOCKED NOTICE ── */}
+          {/* ── LOCKED NOTICE + SHARE ── */}
           {isLocked && (
-            <View style={styles.lockedBanner}>
-              <Ionicons name="lock-closed" size={15} color="#475569" />
-              <Text style={styles.lockedText}>
-                This story is complete — no new turns can be added.
-              </Text>
-            </View>
+            <>
+              <View style={styles.lockedBanner}>
+                <Ionicons name="lock-closed" size={15} color="#475569" />
+                <Text style={styles.lockedText}>
+                  This story is complete — no new turns can be added.
+                </Text>
+              </View>
+
+              <Pressable
+                style={shareStyles.shareTrigger}
+                onPress={() => setShareModalVisible(true)}
+              >
+                <Ionicons name="share-social-outline" size={16} color="#7C3AED" />
+                <Text style={shareStyles.shareTriggerText}>Share this story</Text>
+              </Pressable>
+            </>
           )}
 
           {/* ── TURN FORM (hidden when locked) ── */}
@@ -686,6 +896,45 @@ export default function StoryScreen() {
             </Pressable>
           </Pressable>
         </Modal>
+
+        {/* ── SHARE MODAL ── */}
+        <Modal visible={shareModalVisible} transparent animationType="fade">
+          <View style={shareStyles.overlay}>
+            <View style={shareStyles.sheet}>
+              <View style={shareStyles.sheetHeader}>
+                <Text style={shareStyles.sheetTitle}>Share story</Text>
+                <Pressable onPress={() => setShareModalVisible(false)} disabled={isSharing}>
+                  <Ionicons name="close" size={22} color="#6B7280" />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                style={shareStyles.previewScroll}
+                contentContainerStyle={shareStyles.previewScrollContent}
+              >
+                <View ref={shareViewRef} collapsable={false}>
+                  <ShareCard
+                    story={story}
+                    turns={turns}
+                    mostReactedTurn={mostReactedTurn}
+                    topReactionLabel={topReactionLabel}
+                  />
+                </View>
+              </ScrollView>
+
+              <Pressable
+                style={[styles.primaryButton, shareStyles.shareBtn, isSharing && styles.primaryButtonDisabled]}
+                disabled={isSharing}
+                onPress={handleConfirmShare}
+              >
+                <Ionicons name="share-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryButtonText}>
+                  {isSharing ? "Preparing…" : "Share"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -764,7 +1013,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    marginBottom: 24,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
