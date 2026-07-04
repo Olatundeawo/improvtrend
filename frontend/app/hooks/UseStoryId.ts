@@ -47,6 +47,7 @@ export default function useStoryId() {
   // action states
   const [completing, setCompleting]   = useState(false);
   const [voting, setVoting]           = useState(false);
+  const [editing, setEditing]         = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMsg, setActionMsg]     = useState<string | null>(null);
 
@@ -66,6 +67,35 @@ export default function useStoryId() {
   }, [id]);
 
   useEffect(() => { getStory(); }, [getStory]);
+
+  // ── check if can edit ─────────────────────────────────────────────────────
+  function getEditWindowStatus() {
+    if (!story) return { canEdit: false, timeRemaining: 0, message: "" };
+
+    const EDIT_WINDOW_MS = 20 * 60 * 1000; // 20 minutes
+    const createdAt = new Date(story.createdAt);
+    const now = new Date();
+    const elapsedMs = now.getTime() - createdAt.getTime();
+
+    if (elapsedMs > EDIT_WINDOW_MS) {
+      const minutesElapsed = Math.floor(elapsedMs / 1000 / 60);
+      return {
+        canEdit: false,
+        timeRemaining: 0,
+        message: `Edit window closed (${minutesElapsed}m ago)`,
+      };
+    }
+
+    const timeRemaining = Math.ceil((EDIT_WINDOW_MS - elapsedMs) / 1000);
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+
+    return {
+      canEdit: true,
+      timeRemaining,
+      message: `${minutes}m ${seconds}s remaining`,
+    };
+  }
 
   // ── creator ends story ────────────────────────────────────────────────────
   async function completeStory() {
@@ -130,6 +160,36 @@ export default function useStoryId() {
     }
   }
 
+  // ── edit story ────────────────────────────────────────────────────────────
+  async function editStory(newTitle: string, newContent: string): Promise<boolean> {
+    if (!id) return false;
+    
+    setEditing(true);
+    setActionError(null);
+    
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await axios.patch(
+        `${URL}stories/${id}`,
+        { title: newTitle, content: newContent },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Update the local story with the new data
+      setStory(res.data);
+      setActionMsg("Story updated successfully!");
+      return true;
+    } catch (err: any) {
+      const errorMsg = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? "Could not update story."
+        : "Could not update story.";
+      setActionError(errorMsg);
+      return false;
+    } finally {
+      setEditing(false);
+    }
+  }
+
   return {
     story,
     loading,
@@ -140,6 +200,11 @@ export default function useStoryId() {
     completing,
     voteToComplete,
     voting,
+    
+    editStory,
+    editing,
+    getEditWindowStatus,
+
     actionError,
     actionMsg,
     clearActionMsg: () => setActionMsg(null),
