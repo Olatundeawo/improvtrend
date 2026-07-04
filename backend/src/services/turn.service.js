@@ -3,6 +3,7 @@ import { advanceArc } from "./story.service.js";
 import { awardXp, updateStreak, awardStoryCompletionXp } from "./xp.service.js";
 
 const CLAIM_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours
+const EDIT_WINDOW_MS  = 10 * 60 * 1000;      // 10 minutes
 
 const REACTION_TYPES = ["SPICY", "PLOT_TWIST", "FUNNY", "BEST_LINE"];
 
@@ -14,10 +15,15 @@ function summariseReactions(reactions) {
 
 function formatTurn(turn) {
   const { reactions, ...rest } = turn;
+  const editWindowExpiresAt = new Date(
+    new Date(turn.createdAt).getTime() + EDIT_WINDOW_MS
+  );
   return {
     ...rest,
-    reactions:     summariseReactions(reactions ?? []),
-    reactionCount: (reactions ?? []).length,
+    reactions:          summariseReactions(reactions ?? []),
+    reactionCount:      (reactions ?? []).length,
+    isEditable:         Date.now() < editWindowExpiresAt.getTime(),
+    editWindowExpiresAt,
   };
 }
 
@@ -121,6 +127,50 @@ export async function addTurn(storyId, userId, characterId, content) {
     },
     { timeout: 15_000, maxWait: 5_000 }
   );
+}
+
+export async function editTurn(turnId, userId, content) {
+  if (!content || !content.trim()) {
+    throw new Error("Content cannot be empty.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const turn = await tx.turn.findUnique({
+      where:   { id: turnId },
+      include: { story: { select: { isLocked: true, status: true } } },
+    });
+
+    if (!turn)                       throw new Error("Turn not found.");
+    if (turn.userId !== userId)      throw new Error("You can only edit your own turns.");
+    if (turn.story.isLocked)         throw new Error("Story is locked.");
+    if (turn.story.status === "COMPLETED")
+      throw new Error("Cannot edit turns in a completed story.");
+
+    const elapsedMs = Date.now() - new Date(turn.createdAt).getTime();
+    if (elapsedMs > EDIT_WINDOW_MS) {
+      throw new Error(
+        "Edit window has expired. Turns can only be edited within 10 minutes of posting."
+      );
+    }
+
+    const updated = await tx.turn.update({
+      where: { id: turnId },
+      data:  { content: content.trim(), editedAt: new Date() },
+      include: {
+        user:      { select: { username: true } },
+        character: {
+          select: {
+            name:            true,
+            claimedByUserId: true,
+            claimedBy:       { select: { username: true } },
+          },
+        },
+        reactions: { select: { type: true, userId: true } },
+      },
+    });
+
+    return formatTurn(updated);
+  });
 }
 
 export async function getTurnsByStoryId(storyId) {
