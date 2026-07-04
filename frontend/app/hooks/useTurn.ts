@@ -51,5 +51,46 @@ export default function useTurn() {
       }
   };
 
-  return { createTurn, error, message };
+  const editTurn = async (
+    turnId: string,
+    content: string
+  ) => {
+    setError(null)
+    setMessage(null)
+    const token = await AsyncStorage.getItem("token");
+
+    if (!token) {
+      console.log("Register to contribute");
+      return null;
+    }
+    try {
+      const res = await axios.patch(
+        `${URL}${id}/turns/${turnId}`,
+        { content },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        setMessage("Turn updated.")
+        return res.data;
+      }
+    } catch (err: any) {
+        if (axios.isAxiosError(err)) {
+          setError(
+            err.response?.data?.error ||
+            "Something went wrong"
+          );
+        } else {
+          setError("Network error, check your internet connection");
+        }
+        return null;
+      }
+  };
+
+  return { createTurn, editTurn, error, message };
 }
