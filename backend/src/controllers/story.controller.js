@@ -5,6 +5,7 @@ import {
   getStoryByUserId,
   voteToComplete,
   completeStoryByCreator,
+  editStory
 } from "../services/story.service.js";
 
 export async function create(req, res) {
@@ -100,5 +101,24 @@ export async function complete(req, res) {
       err.message === "Story is already completed" ? 409 : 400;
 
     res.status(status).json({ error: err.message });
+  }
+}
+
+export async function editStoryController(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    const userId = req.user.id;
+ 
+    const updated = await editStory(id, userId, {
+      title,
+      content,
+    });
+ 
+    res.status(200).json(updated);
+  } catch (error) {
+    // 400 for validation/permission errors, 404 for not found
+    const statusCode = error.message.includes("not found") ? 404 : 400;
+    res.status(statusCode).json({ error: error.message });
   }
 }
