@@ -1,4 +1,4 @@
-import { addTurn, getTurnsByStoryId } from "../services/turn.service.js";
+import { addTurn, getTurnsByStoryId, editTurn } from "../services/turn.service.js";
 
 export async function continueStory( req, res) {
     try {
@@ -34,5 +34,22 @@ export async function getTurns (req, res) {
 
     } catch(err) {
         res.status(400).json({ error: err.message})
+    }
+}
+
+export async function editTurnController (req, res) {
+    try {
+        const { turnId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+        const maxCont = 150
+        if (content && content.length > maxCont) {
+            throw new Error("Allowed words is 150.")
+        }
+
+        const turn = await editTurn(turnId, userId, content);
+        res.status(200).json(turn)
+    } catch (err) {
+        res.status(400).json({ error: err.message })
     }
 }
