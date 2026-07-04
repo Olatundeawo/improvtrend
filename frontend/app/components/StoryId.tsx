@@ -38,6 +38,7 @@ import type { ArcStage } from "../components/type";
 const { width } = Dimensions.get("window");
 const IS_WEB    = Platform.OS === "web";
 const MAX_WIDTH = 720;
+const MAX_TURN_LEN = 150;
 
 // ── palette ──────────────────────────────────────────────────────────────────
 
@@ -470,8 +471,8 @@ export default function StoryScreen() {
     clearActionError,
   } = useStoryId();
 
-  const { turn, refresh }                          = useTurnId();
-  const { createTurn, error: turnError, message: turnMessage } = useTurn();
+  const { turn, refresh }                                          = useTurnId();
+  const { createTurn, editTurn, error: turnError, message: turnMessage } = useTurn();
   const { characters, error: charError, message: charMessage, addCharacter, claimCharacter, unclaimCharacter } = useCharacter();
 
   const turns    = Array.isArray(turn) ? turn : [];
@@ -506,6 +507,46 @@ export default function StoryScreen() {
     if (success) {
       setEditModalOpen(false);
     }
+  }
+
+  // ── turn editing ───────────────────────────────────────────────────────────
+  const [editingTurnId, setEditingTurnId]     = useState<string | null>(null);
+  const [editTurnContent, setEditTurnContent] = useState("");
+  const [isSavingTurnEdit, setIsSavingTurnEdit] = useState(false);
+
+  function startEditTurn(item: any) {
+    setEditingTurnId(item.id);
+    setEditTurnContent(item.content);
+  }
+
+  function cancelEditTurn() {
+    setEditingTurnId(null);
+    setEditTurnContent("");
+  }
+
+  async function handleSaveTurnEdit(turnId: string) {
+    const trimmed = editTurnContent.trim();
+    if (!trimmed || isSavingTurnEdit) return;
+    setIsSavingTurnEdit(true);
+    try {
+      const updated = await editTurn(turnId, trimmed);
+      if (updated) {
+        await refresh();
+        setEditingTurnId(null);
+        setEditTurnContent("");
+      }
+    } finally {
+      setIsSavingTurnEdit(false);
+    }
+  }
+
+  function canEditTurn(item: any) {
+    return (
+      !!currentUserId &&
+      item.userId === currentUserId &&
+      item.isEditable &&
+      !isLocked
+    );
   }
 
   // ── reactions ──────────────────────────────────────────────────────────────
@@ -853,39 +894,96 @@ export default function StoryScreen() {
                 data={turns}
                 keyExtractor={(item) => item.id}
                 scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <View style={styles.turnCard}>
-                    <View style={styles.turnHeader}>
-                      <View style={styles.turnIdentity}>
-                        <View style={styles.characterAvatar}>
-                          <Text style={styles.characterAvatarText}>
-                            {item.character?.name?.[0]?.toUpperCase() ?? "?"}
-                          </Text>
+                renderItem={({ item }) => {
+                  const isEditingThis = editingTurnId === item.id;
+                  return (
+                    <View style={styles.turnCard}>
+                      <View style={styles.turnHeader}>
+                        <View style={styles.turnIdentity}>
+                          <View style={styles.characterAvatar}>
+                            <Text style={styles.characterAvatarText}>
+                              {item.character?.name?.[0]?.toUpperCase() ?? "?"}
+                            </Text>
+                          </View>
+                          <View>
+                            <Text style={styles.turnCharacter}>{item.character?.name}</Text>
+                            <Text style={styles.turnAuthor}>@{item.user?.username}</Text>
+                          </View>
                         </View>
-                        <View>
-                          <Text style={styles.turnCharacter}>{item.character?.name}</Text>
-                          <Text style={styles.turnAuthor}>@{item.user?.username}</Text>
+
+                        <View style={styles.turnHeaderRight}>
+                          <Text style={styles.turnTime}>{formatTime(item.createdAt)}</Text>
+                          {canEditTurn(item) && !isEditingThis && (
+                            <Pressable
+                              onPress={() => startEditTurn(item)}
+                              style={({ pressed }) => [styles.turnEditIcon, pressed && { opacity: 0.6 }]}
+                            >
+                              <Ionicons name="pencil-outline" size={14} color="#7C3AED" />
+                            </Pressable>
+                          )}
                         </View>
                       </View>
-                      <Text style={styles.turnTime}>{formatTime(item.createdAt)}</Text>
+
+                      {isEditingThis ? (
+                        <View>
+                          <TextInput
+                            multiline
+                            value={editTurnContent}
+                            onChangeText={setEditTurnContent}
+                            maxLength={MAX_TURN_LEN}
+                            editable={!isSavingTurnEdit}
+                            style={styles.turnEditTextarea}
+                            autoFocus
+                          />
+                          <Text style={styles.charCount}>
+                            {editTurnContent.length} / {MAX_TURN_LEN}
+                          </Text>
+                          <View style={styles.turnEditActions}>
+                            <Pressable
+                              style={[styles.turnEditCancelBtn, isSavingTurnEdit && styles.primaryButtonDisabled]}
+                              disabled={isSavingTurnEdit}
+                              onPress={cancelEditTurn}
+                            >
+                              <Text style={styles.turnEditCancelText}>Cancel</Text>
+                            </Pressable>
+                            <Pressable
+                              style={[
+                                styles.turnEditSaveBtn,
+                                (!editTurnContent.trim() || isSavingTurnEdit) && styles.primaryButtonDisabled,
+                              ]}
+                              disabled={!editTurnContent.trim() || isSavingTurnEdit}
+                              onPress={() => handleSaveTurnEdit(item.id)}
+                            >
+                              <Text style={styles.turnEditSaveText}>
+                                {isSavingTurnEdit ? "Saving…" : "Save"}
+                              </Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      ) : (
+                        <>
+                          <Text style={styles.turnContent}>{item.content}</Text>
+                          {item.editedAt && (
+                            <Text style={styles.turnEditedTag}>Edited</Text>
+                          )}
+                        </>
+                      )}
+
+                      <TurnReactionBar
+                        turnId={item.id}
+                        summary={
+                          reactionMap[item.id] ?? [
+                            { type: "SPICY",      count: 0, reacted: false },
+                            { type: "PLOT_TWIST", count: 0, reacted: false },
+                            { type: "FUNNY",      count: 0, reacted: false },
+                            { type: "BEST_LINE",  count: 0, reacted: false },
+                          ]
+                        }
+                        onReact={handleReactionUpdate}
+                      />
                     </View>
-
-                    <Text style={styles.turnContent}>{item.content}</Text>
-
-                    <TurnReactionBar
-                      turnId={item.id}
-                      summary={
-                        reactionMap[item.id] ?? [
-                          { type: "SPICY",      count: 0, reacted: false },
-                          { type: "PLOT_TWIST", count: 0, reacted: false },
-                          { type: "FUNNY",      count: 0, reacted: false },
-                          { type: "BEST_LINE",  count: 0, reacted: false },
-                        ]
-                      }
-                      onReact={handleReactionUpdate}
-                    />
-                  </View>
-                )}
+                  );
+                }}
               />
             ) : (
               <View style={styles.emptyState}>
@@ -1225,12 +1323,22 @@ const styles = StyleSheet.create({
   turnCard:     { borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#EDE9FE", marginBottom: 14, backgroundColor: "#FDFCFF", shadowColor: "#7C3AED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   turnHeader:   { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 },
   turnIdentity: { flexDirection: "row", alignItems: "center", gap: 10 },
+  turnHeaderRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   characterAvatar:     { width: 36, height: 36, borderRadius: 18, backgroundColor: "#EDE9FE", alignItems: "center", justifyContent: "center" },
   characterAvatarText: { fontWeight: "800", fontSize: 14, color: "#7C3AED" },
   turnCharacter: { fontWeight: "700", color: "#7C3AED", fontSize: 14 },
   turnAuthor:    { color: "#9CA3AF", fontSize: 12, marginTop: 1 },
   turnTime:      { fontSize: 12, color: "#9CA3AF" },
   turnContent:   { lineHeight: 24, color: "#374151", fontSize: 15 },
+  turnEditIcon:  { width: 26, height: 26, borderRadius: 999, backgroundColor: "#F3E8FF", alignItems: "center", justifyContent: "center" },
+  turnEditedTag: { marginTop: 4, fontSize: 11, color: "#9CA3AF", fontStyle: "italic" },
+
+  turnEditTextarea: { minHeight: 90, borderRadius: 12, borderWidth: 1, borderColor: "#D1D5DB", padding: 12, fontSize: 15, color: "#1F2937", textAlignVertical: "top", marginBottom: 2 },
+  turnEditActions:  { flexDirection: "row", gap: 8, marginTop: 8 },
+  turnEditCancelBtn: { flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: "#D1D5DB", alignItems: "center", justifyContent: "center", backgroundColor: "#F9FAFB" },
+  turnEditCancelText:{ fontSize: 13, fontWeight: "700", color: "#6B7280" },
+  turnEditSaveBtn:   { flex: 1, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#7C3AED" },
+  turnEditSaveText:  { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
 
   emptyState: { borderWidth: 1, borderStyle: "dashed", borderColor: "#D1D5DB", borderRadius: 16, padding: 32, alignItems: "center", gap: 8 },
   emptyTitle: { fontWeight: "700", fontSize: 15, color: "#374151" },
