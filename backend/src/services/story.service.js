@@ -351,3 +351,90 @@ export async function getStoryByUserId(userId) {
     })),
   };
 }
+
+ 
+const EDIT_WINDOW_MS = 20 * 60 * 1000; // 20 minutes
+ 
+export async function editStory(storyId, userId, data) {
+  const { title, content } = data;
+ 
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    select: {
+      id:        true,
+      userId:    true,
+      createdAt: true,
+      status:    true,
+    },
+  });
+ 
+  if (!story) throw new Error("Story not found");
+  
+  if (story.userId !== userId)
+    throw new Error("Only the creator can edit this story");
+ 
+  if (story.status === "COMPLETED")
+    throw new Error("Cannot edit a completed story");
+ 
+  const now = new Date();
+  const elapsedMs = now.getTime() - story.createdAt.getTime();
+ 
+  if (elapsedMs > EDIT_WINDOW_MS) {
+    const minutesElapsed = Math.floor(elapsedMs / 1000 / 60);
+    throw new Error(`Edit window closed. Story was created ${minutesElapsed} minutes ago`);
+  }
+ 
+  const updated = await prisma.story.update({
+    where: { id: storyId },
+    data: {
+      title,
+      content,
+    },
+    include: {
+      user: {
+        select: {
+          username:  true,
+          avatarUrl: true,
+          badges: { select: { badge: true }, orderBy: { awardedAt: "desc" }, take: 1 },
+        },
+      },
+      characters: {
+        select: {
+          id:              true,
+          name:            true,
+          claimedByUserId: true,
+          claimedBy:       { select: { username: true } },
+        },
+      },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        include: { user: { select: { username: true } } },
+      },
+      votes: { select: { userId: true } },
+      turns: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          user:      { select: { username: true, avatarUrl: true } },
+          character: { select: { id: true, name: true } },
+          reactions: { select: { type: true, userId: true } },
+        },
+      },
+    },
+  });
+ 
+  return {
+    ...updated,
+    user: {
+      username:  updated.user.username,
+      avatarUrl: updated.user.avatarUrl ?? null,
+      badge:     updated.user.badges[0]?.badge ?? null,
+    },
+    turns: updated.turns.map(formatTurn),
+    totalReactions: updated.turns.reduce(
+      (sum, t) => sum + (t.reactions?.length ?? 0),
+      0
+    ),
+    commentCount: updated.comments.length,
+    voteCount:    updated.votes.length,
+  };
+}
