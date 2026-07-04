@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { captureRef } from "react-native-view-shot";
@@ -449,6 +450,8 @@ const shareStyles = StyleSheet.create({
 
 export default function StoryScreen() {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const IS_COMPACT_LAYOUT = windowWidth < 480;
 
   const {
     story,
@@ -458,12 +461,14 @@ export default function StoryScreen() {
     completing,
     voteToComplete,
     voting,
+    editStory,
+    editing,
+    getEditWindowStatus,
     actionError,
     actionMsg,
     clearActionMsg,
     clearActionError,
   } = useStoryId();
- 
 
   const { turn, refresh }                          = useTurnId();
   const { createTurn, error: turnError, message: turnMessage } = useTurn();
@@ -477,6 +482,31 @@ export default function StoryScreen() {
 
   const isCreator  = !!currentUserId && !!story && story.userId === currentUserId;
   const isLocked   = story?.status === "COMPLETED" || story?.isLocked;
+
+  // ── edit modal ─────────────────────────────────────────────────────────────
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const editWindow = getEditWindowStatus();
+
+  useEffect(() => {
+    if (story && editModalOpen) {
+      setEditTitle(story.title);
+      setEditContent(story.content);
+    }
+  }, [editModalOpen, story]);
+
+  const canEditStory = isCreator && editWindow.canEdit && !isLocked;
+  const editCanSubmit = editTitle.trim() && editContent.trim() && !editing;
+
+  async function handleSaveEdit() {
+    if (!editCanSubmit) return;
+    
+    const success = await editStory(editTitle.trim(), editContent.trim());
+    if (success) {
+      setEditModalOpen(false);
+    }
+  }
 
   // ── reactions ──────────────────────────────────────────────────────────────
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
@@ -647,7 +677,27 @@ export default function StoryScreen() {
             status={story.status ?? "ACTIVE"}
           />
 
-          <Text style={styles.title}>{story.title}</Text>
+          {/* ── TITLE + EDIT BUTTON ── */}
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{story.title}</Text>
+            {canEditStory && (
+              <Pressable
+                onPress={() => setEditModalOpen(true)}
+                style={({ pressed }) => [styles.editButton, pressed && { opacity: 0.6 }]}
+              >
+                <Ionicons name="pencil-outline" size={18} color="#7C3AED" />
+              </Pressable>
+            )}
+          </View>
+
+          {/* ── EDIT TIME HINT ── */}
+          {isCreator && !isLocked && !editWindow.canEdit && (
+            <View style={styles.editExpiredHint}>
+              <Ionicons name="lock-closed-outline" size={14} color="#9CA3AF" />
+              <Text style={styles.editExpiredText}>{editWindow.message}</Text>
+            </View>
+          )}
+
           <Text style={styles.content}>{story.content}</Text>
 
           {/* ── COMPLETE / VOTE ACTIONS ── */}
@@ -897,6 +947,92 @@ export default function StoryScreen() {
           </Pressable>
         </Modal>
 
+        {/* ── EDIT MODAL ── */}
+        <Modal visible={editModalOpen} transparent animationType="fade">
+          <Pressable
+            style={[styles.overlay, styles.editOverlay]}
+            onPress={() => setEditModalOpen(false)}
+          >
+            <Pressable
+              style={[styles.menu, styles.editModal, IS_COMPACT_LAYOUT && styles.editModalCompact]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <ScrollView
+                style={styles.editModalScroll}
+                contentContainerStyle={styles.editModalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.editModalHeader}>
+                  <Text style={styles.menuTitle}>Edit story</Text>
+                  <Pressable onPress={() => setEditModalOpen(false)} disabled={editing}>
+                    <Ionicons name="close" size={22} color="#6B7280" />
+                  </Pressable>
+                </View>
+
+                <Text style={styles.editFieldLabel}>Title</Text>
+                <TextInput
+                  value={editTitle}
+                  onChangeText={setEditTitle}
+                  placeholder="Story title"
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.editInput}
+                  editable={!editing}
+                  maxLength={120}
+                />
+                <Text style={styles.charCount}>
+                  {editTitle.length} / 120
+                </Text>
+
+                <Text style={styles.editFieldLabel}>Content</Text>
+                <TextInput
+                  value={editContent}
+                  onChangeText={setEditContent}
+                  placeholder="Story content"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  style={styles.editTextarea}
+                  editable={!editing}
+                  maxLength={2000}
+                />
+                <Text style={styles.charCount}>
+                  {editContent.length} / 2000
+                </Text>
+
+                <View style={[styles.editModalActions, IS_COMPACT_LAYOUT && styles.editModalActionsStacked]}>
+                  <Pressable
+                    style={[styles.editCancelBtn, editing && styles.primaryButtonDisabled]}
+                    disabled={editing}
+                    onPress={() => setEditModalOpen(false)}
+                  >
+                    <Text style={styles.editCancelText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.primaryButton,
+                      styles.editPrimaryButton,
+                      (!editCanSubmit || editing) && styles.primaryButtonDisabled,
+                    ]}
+                    disabled={!editCanSubmit || editing}
+                    onPress={handleSaveEdit}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {editing ? "Saving…" : "Save changes"}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {editWindow.canEdit && (
+                  <View style={styles.editTimerHint}>
+                    <Ionicons name="time-outline" size={12} color="#7C3AED" />
+                    <Text style={styles.editTimerText}>{editWindow.message}</Text>
+                  </View>
+                )}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         {/* ── SHARE MODAL ── */}
         <Modal visible={shareModalVisible} transparent animationType="fade">
           <View style={shareStyles.overlay}>
@@ -964,7 +1100,43 @@ const styles = StyleSheet.create({
   feedbackSuccess: { backgroundColor: "#ECFDF5", borderWidth: 1, borderColor: "#A7F3D0" },
   feedbackText:    { fontSize: 14, fontWeight: "600", color: "#0F172A", textAlign: "center" },
 
-  title:   { fontSize: 26, fontWeight: "800", marginBottom: 12, color: "#7C3AED" },
+  // ── title & edit ───────────────────────────────────────────────────────────
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 4,
+  },
+  title:   { fontSize: 26, fontWeight: "800", flex: 1, color: "#7C3AED" },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: "#F3E8FF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+  },
+  editExpiredHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  editExpiredText: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontWeight: "500",
+  },
+
   content: { fontSize: 16, lineHeight: 26, marginBottom: 20, color: "#1F2937" },
 
   // ── complete / vote ──────────────────────────────────────────────────────
@@ -1044,7 +1216,7 @@ const styles = StyleSheet.create({
 
   primaryButton:         { marginTop: 28, height: 54, borderRadius: 16, backgroundColor: "#7C3AED", alignItems: "center", justifyContent: "center", shadowColor: "#7C3AED", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
   primaryButtonDisabled: { backgroundColor: "#D1D5DB", opacity: 0.7, shadowOpacity: 0.1 },
-  primaryButtonText:     { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+  primaryButtonText:     { color: "#FFFFFF", fontWeight: "700", fontSize: 16, textAlign: "center" },
 
   // ── turns ─────────────────────────────────────────────────────────────────
   turnsWrapper: { marginTop: 36 },
@@ -1087,6 +1259,25 @@ const styles = StyleSheet.create({
   addCharModal: { padding: 20, alignSelf: "center", width: Math.min(width - 32, 420) },
   addCharInput: { height: 50, borderRadius: 12, borderWidth: 1, borderColor: "#D1D5DB", paddingHorizontal: 14, fontSize: 16, color: "#1F2937", marginTop: 12 },
   charLimitHint: { fontSize: 12, color: "#9CA3AF", marginTop: 6, marginBottom: 4 },
+
+  // ── edit modal ──────────────────────────────────────────────────────────────
+  editOverlay: { justifyContent: "center", alignItems: "center", paddingVertical: 20, paddingHorizontal: 16 },
+  editModal: { padding: 20, alignSelf: "center", width: "100%", maxWidth: 560, maxHeight: "90%", minWidth: 0 },
+  editModalCompact: { padding: 16 },
+  editModalScroll: { width: "100%", maxHeight: "100%" },
+  editModalScrollContent: { width: "100%", paddingBottom: 4 },
+  editModalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16, paddingBottom: 0 },
+  editFieldLabel: { fontSize: 13, fontWeight: "700", color: "#374151", marginTop: 14, marginBottom: 8 },
+  editInput: { height: 50, borderRadius: 12, borderWidth: 1, borderColor: "#D1D5DB", paddingHorizontal: 14, fontSize: 16, color: "#1F2937", marginBottom: 2 },
+  editTextarea: { minHeight: 140, maxHeight: 240, borderRadius: 12, borderWidth: 1, borderColor: "#D1D5DB", padding: 14, fontSize: 16, color: "#1F2937", marginBottom: 2, textAlignVertical: "top" },
+  charCount: { fontSize: 11, color: "#9CA3AF", textAlign: "right", marginBottom: 8 },
+  editModalActions: { flexDirection: "row", gap: 10, marginTop: 16, alignItems: "stretch" },
+  editModalActionsStacked: { flexDirection: "column", gap: 10 },
+  editCancelBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: "#D1D5DB", alignItems: "center", justifyContent: "center", backgroundColor: "#F9FAFB", paddingHorizontal: 12 },
+  editPrimaryButton: { flex: 1, marginTop: 0, minHeight: 48, paddingHorizontal: 12 },
+  editCancelText: { fontSize: 14, fontWeight: "700", color: "#6B7280" },
+  editTimerHint: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: "#F5F3FF", borderWidth: 1, borderColor: "#DDD6FE" },
+  editTimerText: { fontSize: 12, color: "#7C3AED", fontWeight: "600" },
 
   backRow:    { width: "100%", maxWidth: MAX_WIDTH, paddingHorizontal: 16, marginBottom: 12, alignSelf: "center" },
   backButton: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: "#F3E8FF", alignSelf: "flex-start" },
