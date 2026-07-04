@@ -6,6 +6,7 @@ import {
   getUserStoryById,
   voteComplete,
   complete,
+  editStoryController as editStory
 } from "../controllers/story.controller.js";
 import auth from "../middleware/auth.js";
 
@@ -17,5 +18,6 @@ router.get("/user/:userId",    auth, getUserStoryById);
 router.get("/:id",                   get);
 router.post("/:id/vote-complete", auth, voteComplete);
 router.post("/:id/complete",      auth, complete);
+router.patch("/:id", auth, editStory);
 
 export default router;
