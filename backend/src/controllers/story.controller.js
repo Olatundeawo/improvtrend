@@ -5,7 +5,8 @@ import {
   getStoryByUserId,
   voteToComplete,
   completeStoryByCreator,
-  editStory
+  editStory,
+  deleteStory
 } from "../services/story.service.js";
 
 export async function create(req, res) {
@@ -118,6 +119,22 @@ export async function editStoryController(req, res) {
     res.status(200).json(updated);
   } catch (error) {
     // 400 for validation/permission errors, 404 for not found
+    const statusCode = error.message.includes("not found") ? 404 : 400;
+    res.status(statusCode).json({ error: error.message });
+  }
+}
+
+
+// ── DELETE /stories/:id - Delete a story
+export async function deleteStoryController(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+ 
+    const result = await deleteStory(id, userId);
+ 
+    res.status(200).json(result);
+  } catch (error) {
     const statusCode = error.message.includes("not found") ? 404 : 400;
     res.status(statusCode).json({ error: error.message });
   }
