@@ -10,11 +10,11 @@ export type ReactionSummary = {
   reacted: boolean;
 };
 
-export const REACTION_META: Record<ReactionType, { emoji: string; label: string }> = {
-  SPICY:      { emoji: "🌶️", label: "Spicy"      },
-  PLOT_TWIST: { emoji: "🌀", label: "Twist"      },
-  FUNNY:      { emoji: "😂", label: "Funny"      },
-  BEST_LINE:  { emoji: "⭐", label: "Best"       },
+export const REACTION_META: Record<ReactionType, { icon: string; label: string }> = {
+  SPICY:      { icon: "flame", label: "Spicy"      },
+  PLOT_TWIST: { icon: "shuffle", label: "Twist"      },
+  FUNNY:      { icon: "happy-outline", label: "Funny"      },
+  BEST_LINE:  { icon: "star", label: "Best"       },
 };
 
 async function authHeaders() {
