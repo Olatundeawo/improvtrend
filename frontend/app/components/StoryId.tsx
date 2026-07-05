@@ -9,6 +9,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -264,7 +265,7 @@ function TurnReactionBar({
               pressed && { opacity: 0.75 },
             ]}
           >
-            <Text style={rb.emoji}>{meta.emoji}</Text>
+            <Ionicons name={meta.icon as any} size={14} color={r.reacted ? "#7C3AED" : "#6B7280"} />
             <Text style={[rb.label, r.reacted && rb.labelActive]}>
               {isLoading ? "…" : r.count > 0 ? r.count : meta.label}
             </Text>
@@ -279,7 +280,6 @@ const rb = StyleSheet.create({
   row:        { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
   pill:       { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: "#E5E7EB", backgroundColor: "#F9FAFB" },
   pillActive: { borderColor: "#C4B5FD", backgroundColor: "#F3E8FF" },
-  emoji:      { fontSize: 13 },
   label:      { fontSize: 12, color: "#6B7280", fontWeight: "500" },
   labelActive:{ color: "#7C3AED", fontWeight: "700" },
 });
@@ -315,7 +315,11 @@ function getTopReactionSummary(
   }
   if (!top || top.count === 0) return null;
   const meta = REACTION_META[top.type];
-  return `${meta.emoji} ${top.count} ${meta.label}`;
+  return {
+    count: top.count,
+    icon: meta.icon,
+    label: meta.label,
+  };
 }
 
 // ── ShareCard (captured + shared as an image) ─────────────────────────────────
@@ -326,12 +330,12 @@ function ShareCard({
   story,
   turns,
   mostReactedTurn,
-  topReactionLabel,
+  topReaction,
 }: {
   story: any;
   turns: any[];
   mostReactedTurn: any | null;
-  topReactionLabel: string | null;
+  topReaction: ReturnType<typeof getTopReactionSummary>;
 }) {
   return (
     <View style={sc.card}>
@@ -345,7 +349,7 @@ function ShareCard({
 
       <Text style={sc.title}>{story.title}</Text>
       <Text style={sc.meta}>
-        {turns.length} {turns.length === 1 ? "turn" : "turns"} · Completed story
+        {turns.length} {turns.length === 1 ? "turn" : "turns"} - Completed story
       </Text>
 
       {mostReactedTurn && (
@@ -353,13 +357,22 @@ function ShareCard({
           <Text style={sc.quoteMark}>"</Text>
           <Text style={sc.quoteText}>
             {mostReactedTurn.content.length > 220
-              ? mostReactedTurn.content.slice(0, 220).trim() + "…"
+              ? mostReactedTurn.content.slice(0, 220).trim() + "..."
               : mostReactedTurn.content}
           </Text>
-          <Text style={sc.quoteAttribution}>
-            — {mostReactedTurn.character?.name ?? "Unknown"}
-            {topReactionLabel ? `  ·  ${topReactionLabel}` : ""}
-          </Text>
+          <View style={sc.quoteAttributionRow}>
+            <Text style={sc.quoteAttribution}>
+              - {mostReactedTurn.character?.name ?? "Unknown"}
+            </Text>
+            {topReaction && (
+              <View style={sc.topReaction}>
+                <Ionicons name={topReaction.icon as any} size={12} color="#7C3AED" />
+                <Text style={sc.topReactionText}>
+                  {topReaction.count} {topReaction.label}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
@@ -404,9 +417,12 @@ const sc = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
-  quoteMark:        { fontSize: 28, color: "#C4B5FD", fontWeight: "800", lineHeight: 28, marginBottom: 2 },
-  quoteText:        { fontSize: 15, lineHeight: 22, color: "#3730A3", fontStyle: "italic" },
-  quoteAttribution: { marginTop: 10, fontSize: 12, fontWeight: "700", color: "#7C3AED" },
+  quoteMark:           { fontSize: 28, color: "#C4B5FD", fontWeight: "800", lineHeight: 28, marginBottom: 2 },
+  quoteText:           { fontSize: 15, lineHeight: 22, color: "#3730A3", fontStyle: "italic" },
+  quoteAttributionRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 10 },
+  quoteAttribution:    { fontSize: 12, fontWeight: "700", color: "#7C3AED" },
+  topReaction:         { flexDirection: "row", alignItems: "center", gap: 3 },
+  topReactionText:     { fontSize: 12, fontWeight: "700", color: "#7C3AED" },
 
   divider:      { height: 1, backgroundColor: "#F3F4F6", marginBottom: 14 },
   sectionTitle: { fontSize: 12, fontWeight: "700", color: "#9CA3AF", letterSpacing: 0.5, marginBottom: 12, textTransform: "uppercase" },
@@ -453,6 +469,7 @@ export default function StoryScreen() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const IS_COMPACT_LAYOUT = windowWidth < 480;
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const {
     story,
@@ -467,6 +484,8 @@ export default function StoryScreen() {
     getEditWindowStatus,
     actionError,
     actionMsg,
+    deleteStory,
+    deleting,
     clearActionMsg,
     clearActionError,
   } = useStoryId();
@@ -547,6 +566,13 @@ export default function StoryScreen() {
       item.isEditable &&
       !isLocked
     );
+  }
+
+  async function handleDeleteStory() {
+    const success = await deleteStory();
+    if (success) {
+      setDeleteConfirmOpen(false);
+    }
   }
 
   // ── reactions ──────────────────────────────────────────────────────────────
@@ -645,7 +671,7 @@ export default function StoryScreen() {
   const atCharLimit = characters.length >= 6;
 
   const mostReactedTurn  = hasTurns ? getMostReactedTurn(turns, reactionMap) : null;
-  const topReactionLabel = mostReactedTurn ? getTopReactionSummary(mostReactedTurn.id, reactionMap) : null;
+  const topReaction = mostReactedTurn ? getTopReactionSummary(mostReactedTurn.id, reactionMap) : null;
 
   function isSelectable(char: Character) {
     return char.claimedByUserId === null || char.claimedByUserId === currentUserId;
@@ -683,7 +709,11 @@ export default function StoryScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
+      keyboardVerticalOffset={0}
+    >
       <FeedHeader />
 
       <View style={styles.backRow}>
@@ -706,6 +736,7 @@ export default function StoryScreen() {
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
 
@@ -718,26 +749,31 @@ export default function StoryScreen() {
             status={story.status ?? "ACTIVE"}
           />
 
-          {/* ── TITLE + EDIT BUTTON ── */}
+          {/* ── TITLE + EDIT/DELETE BUTTONS (FIXED) ── */}
           <View style={styles.titleRow}>
             <Text style={styles.title}>{story.title}</Text>
-            {canEditStory && (
-              <Pressable
-                onPress={() => setEditModalOpen(true)}
-                style={({ pressed }) => [styles.editButton, pressed && { opacity: 0.6 }]}
-              >
-                <Ionicons name="pencil-outline" size={18} color="#7C3AED" />
-              </Pressable>
+            {isCreator && (
+              <View style={styles.actionButtons}>
+                {/* EDIT button - only show when can actually edit */}
+                {canEditStory && (
+                  <Pressable
+                    onPress={() => setEditModalOpen(true)}
+                    style={({ pressed }) => [styles.editButton, pressed && { opacity: 0.6 }]}
+                  >
+                    <Ionicons name="pencil-outline" size={18} color="#7C3AED" />
+                  </Pressable>
+                )}
+                
+                {/* DELETE button - always show for creator (locked or not) */}
+                <Pressable
+                  onPress={() => setDeleteConfirmOpen(true)}
+                  style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.6 }]}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                </Pressable>
+              </View>
             )}
           </View>
-
-          {/* ── EDIT TIME HINT ── */}
-          {isCreator && !isLocked && !editWindow.canEdit && (
-            <View style={styles.editExpiredHint}>
-              <Ionicons name="lock-closed-outline" size={14} color="#9CA3AF" />
-              <Text style={styles.editExpiredText}>{editWindow.message}</Text>
-            </View>
-          )}
 
           <Text style={styles.content}>{story.content}</Text>
 
@@ -1131,6 +1167,50 @@ export default function StoryScreen() {
           </Pressable>
         </Modal>
 
+        {/* ── DELETE CONFIRM MODAL ── */}
+        <Modal visible={deleteConfirmOpen} transparent animationType="fade">
+          <Pressable
+            style={styles.overlay}
+            onPress={() => !deleting && setDeleteConfirmOpen(false)}
+          >
+            <Pressable
+              style={[styles.menu, styles.deleteConfirmModal]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.deleteConfirmIcon}>
+                <Ionicons name="warning" size={40} color="#EF4444" />
+              </View>
+        
+              <Text style={styles.deleteConfirmTitle}>Delete story?</Text>
+              <Text style={styles.deleteConfirmText}>
+                This action cannot be undone. All turns, comments, and reactions will be permanently deleted.
+              </Text>
+        
+              <Text style={styles.deleteStoryTitle}>{story.title}</Text>
+        
+              <View style={styles.deleteConfirmActions}>
+                <Pressable
+                  style={[styles.deleteCancelBtn, deleting && styles.primaryButtonDisabled]}
+                  disabled={deleting}
+                  onPress={() => setDeleteConfirmOpen(false)}
+                >
+                  <Text style={styles.deleteCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.deleteConfirmBtn, deleting && styles.primaryButtonDisabled]}
+                  disabled={deleting}
+                  onPress={handleDeleteStory}
+                >
+                  <Ionicons name="trash" size={16} color="#FFFFFF" />
+                  <Text style={styles.deleteConfirmBtnText}>
+                    {deleting ? "Deleting…" : "Delete story"}
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         {/* ── SHARE MODAL ── */}
         <Modal visible={shareModalVisible} transparent animationType="fade">
           <View style={shareStyles.overlay}>
@@ -1151,7 +1231,7 @@ export default function StoryScreen() {
                     story={story}
                     turns={turns}
                     mostReactedTurn={mostReactedTurn}
-                    topReactionLabel={topReactionLabel}
+                    topReaction={topReaction}
                   />
                 </View>
               </ScrollView>
@@ -1170,7 +1250,7 @@ export default function StoryScreen() {
           </View>
         </Modal>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -1207,6 +1287,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title:   { fontSize: 26, fontWeight: "800", flex: 1, color: "#7C3AED" },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
   editButton: {
     width: 40,
     height: 40,
@@ -1217,22 +1301,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#DDD6FE",
   },
-  editExpiredHint: {
-    flexDirection: "row",
+  deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: "#FEF2F2",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#F9FAFB",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  editExpiredText: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    borderColor: "#FECACA",
   },
 
   content: { fontSize: 16, lineHeight: 26, marginBottom: 20, color: "#1F2937" },
@@ -1386,6 +1463,84 @@ const styles = StyleSheet.create({
   editCancelText: { fontSize: 14, fontWeight: "700", color: "#6B7280" },
   editTimerHint: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: "#F5F3FF", borderWidth: 1, borderColor: "#DDD6FE" },
   editTimerText: { fontSize: 12, color: "#7C3AED", fontWeight: "600" },
+
+  // ── delete modal ──────────────────────────────────────────────────────────────
+  deleteConfirmModal: {
+    padding: 20,
+    alignSelf: "center",
+    width: Math.min(width - 32, 380),
+  },
+  deleteConfirmIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FEF2F2",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  deleteConfirmTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1F2937",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  deleteConfirmText: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  deleteStoryTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#EF4444",
+    textAlign: "center",
+    marginBottom: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: "#FEF2F2",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  deleteConfirmActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  deleteCancelBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F9FAFB",
+  },
+  deleteCancelText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6B7280",
+  },
+  deleteConfirmBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  deleteConfirmBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
 
   backRow:    { width: "100%", maxWidth: MAX_WIDTH, paddingHorizontal: 16, marginBottom: 12, alignSelf: "center" },
   backButton: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: "#F3E8FF", alignSelf: "flex-start" },
