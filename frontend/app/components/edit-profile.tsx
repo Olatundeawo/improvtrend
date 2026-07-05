@@ -12,21 +12,22 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/auth";
 import useEditProfile from "../hooks/Useeditprofile";
 
 
 const ALL_GENRES = [
-  { key: "COMEDY",        label: "😂 Comedy" },
-  { key: "HORROR",        label: "👻 Horror" },
-  { key: "ROMANCE",       label: "💕 Romance" },
-  { key: "MYSTERY",       label: "🔍 Mystery" },
-  { key: "FANTASY",       label: "🧙 Fantasy" },
-  { key: "SCI_FI",        label: "🚀 Sci-Fi" },
-  { key: "DRAMA",         label: "🎭 Drama" },
-  { key: "ADVENTURE",     label: "⚔️ Adventure" },
-  { key: "THRILLER",      label: "😰 Thriller" },
-  { key: "SLICE_OF_LIFE", label: "☕ Slice of Life" },
+  { key: "COMEDY",        label: "Comedy", icon: "happy" },
+  { key: "HORROR",        label: "Horror", icon: "skull" },
+  { key: "ROMANCE",       label: "Romance", icon: "heart" },
+  { key: "MYSTERY",       label: "Mystery", icon: "search" },
+  { key: "FANTASY",       label: "Fantasy", icon: "wand-magic-sparkles" },
+  { key: "SCI_FI",        label: "Sci-Fi", icon: "rocket" },
+  { key: "DRAMA",         label: "Drama", icon: "theater-masks" },
+  { key: "ADVENTURE",     label: "Adventure", icon: "shield" },
+  { key: "THRILLER",      label: "Thriller", icon: "alert-circle" },
+  { key: "SLICE_OF_LIFE", label: "Slice of Life", icon: "coffee" },
 ];
 
 const BIO_MAX = 280;
@@ -111,7 +112,7 @@ export default function EditProfile() {
           <Text style={styles.fieldLabel}>Genre preferences</Text>
           <Text style={styles.fieldHint}>Pick genres you enjoy writing or reading.</Text>
           <View style={styles.genreGrid}>
-            {ALL_GENRES.map(({ key, label }) => {
+            {ALL_GENRES.map(({ key, label, icon }) => {
               const selected = genres.includes(key);
               return (
                 <Pressable
@@ -119,6 +120,12 @@ export default function EditProfile() {
                   onPress={() => toggleGenre(key)}
                   style={[styles.genreChip, selected && styles.genreChipSelected]}
                 >
+                  <Ionicons
+                    name={icon as any}
+                    size={14}
+                    color={selected ? "#1d4ed8" : "#64748b"}
+                    style={{ marginRight: 4 }}
+                  />
                   <Text style={[styles.genreChipText, selected && styles.genreChipTextSelected]}>
                     {label}
                   </Text>
@@ -228,6 +235,9 @@ const styles = StyleSheet.create({
   // Genre grid
   genreGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   genreChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: "#e2e8f0",
