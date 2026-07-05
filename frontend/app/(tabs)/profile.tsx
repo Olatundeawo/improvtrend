@@ -11,16 +11,24 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/auth";
 import useUserStories from "../hooks/useUserStories";
 import useXpSummary from "../hooks/useXpSummary";
 
 
 const REASON_LABELS: Record<string, string> = {
-  TURN_WRITTEN:     "✍️  Turns written",
-  CLIMAX_BONUS:     "🎯  Climax bonuses",
-  VIRAL_TURN:       "📈  Viral turns",
-  STORY_COMPLETION: "🏁  Story completions",
+  TURN_WRITTEN:     "Turns written",
+  CLIMAX_BONUS:     "Climax bonuses",
+  VIRAL_TURN:       "Viral turns",
+  STORY_COMPLETION: "Story completions",
+};
+
+const REASON_ICONS: Record<string, string> = {
+  TURN_WRITTEN:     "pencil",
+  CLIMAX_BONUS:     "target",
+  VIRAL_TURN:       "trending-up",
+  STORY_COMPLETION: "flag",
 };
 
 const LEVEL_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
@@ -31,29 +39,29 @@ const LEVEL_COLORS: Record<string, { bg: string; text: string; bar: string }> = 
   GRAND_NARRATOR: { bg: "#fffbeb", text: "#b45309", bar: "#f59e0b" },
 };
 
-const BADGE_EMOJI: Record<string, string> = {
-  NEWBIE:          "🌱",
-  CONTRIBUTOR:     "✍️",
-  CREATOR:         "📖",
-  TREND_STARTER:   "🔥",
-  PLOT_TWISTER:    "🌀",
-  SCENE_SETTER:    "🎭",
-  NARRATOR_KING:   "👑",
-  SPEED_WRITER:    "⚡",
-  CHARACTER_ACTOR: "🎪",
+const BADGE_ICON: Record<string, string> = {
+  NEWBIE:          "leaf",
+  CONTRIBUTOR:     "pencil",
+  CREATOR:         "book",
+  TREND_STARTER:   "flame",
+  PLOT_TWISTER:    "shuffle",
+  SCENE_SETTER:    "theater-masks",
+  NARRATOR_KING:   "crown",
+  SPEED_WRITER:    "lightning",
+  CHARACTER_ACTOR: "mask",
 };
 
 const GENRE_LABELS: Record<string, string> = {
-  COMEDY:       "😂 Comedy",
-  HORROR:       "👻 Horror",
-  ROMANCE:      "💕 Romance",
-  MYSTERY:      "🔍 Mystery",
-  FANTASY:      "🧙 Fantasy",
-  SCI_FI:       "🚀 Sci-Fi",
-  DRAMA:        "🎭 Drama",
-  ADVENTURE:    "⚔️ Adventure",
-  THRILLER:     "😰 Thriller",
-  SLICE_OF_LIFE:"☕ Slice of Life",
+  COMEDY:       "Comedy",
+  HORROR:       "Horror",
+  ROMANCE:      "Romance",
+  MYSTERY:      "Mystery",
+  FANTASY:      "Fantasy",
+  SCI_FI:       "Sci-Fi",
+  DRAMA:        "Drama",
+  ADVENTURE:    "Adventure",
+  THRILLER:     "Thriller",
+  SLICE_OF_LIFE:"Slice of Life",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -147,7 +155,7 @@ function BadgesRow({ badges }: BadgesRowProps) {
       <View style={styles.badgesWrap}>
         {badges.map(({ badge }) => (
           <View key={badge} style={styles.badgeChip}>
-            <Text style={styles.badgeChipEmoji}>{BADGE_EMOJI[badge] ?? "🏅"}</Text>
+            <Ionicons name={BADGE_ICON[badge] ?? "star" as any} size={16} color="#7C3AED" />
             <Text style={styles.badgeChipText}>
               {badge.replace(/_/g, " ")}
             </Text>
@@ -189,6 +197,7 @@ function GenreChips({ genres }: { genres: string[] }) {
       <View style={styles.genreWrap}>
         {genres.map((g) => (
           <View key={g} style={styles.genreChip}>
+            <Ionicons name="bookmark" size={12} color="#1d4ed8" />
             <Text style={styles.genreChipText}>{GENRE_LABELS[g] ?? g}</Text>
           </View>
         ))}
@@ -255,7 +264,11 @@ export default function Profile() {
             {xpData?.badge && (
               <View style={styles.badgePill}>
                 <Text style={styles.badgePillText}>
-                  {BADGE_EMOJI[xpData.badge] ?? "🏅"}{" "}
+                  {BADGE_ICON[xpData.badge] ? (
+                    <Ionicons name={BADGE_ICON[xpData.badge] as any} size={16} color="#7C3AED" />
+                  ) : (
+                    <Text>🏅</Text>
+                  )}{" "}
                   {xpData.badgeMeta?.title ?? xpData.badge.replace(/_/g, " ")}
                 </Text>
               </View>
@@ -345,9 +358,12 @@ export default function Profile() {
                 <Text style={styles.sectionLabel}>XP breakdown</Text>
                 {xpBreakdown.map((item) => (
                   <View key={item.reason} style={styles.breakdownRow}>
-                    <Text style={styles.breakdownReason}>
-                      {REASON_LABELS[item.reason] ?? item.reason}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+                      <Ionicons name={REASON_ICONS[item.reason] as any} size={16} color="#7C3AED" />
+                      <Text style={styles.breakdownReason}>
+                        {REASON_LABELS[item.reason] ?? item.reason}
+                      </Text>
+                    </View>
                     <View style={styles.breakdownMeta}>
                       <Text style={styles.breakdownCount}>
                         ×{item._count.id}
@@ -473,8 +489,11 @@ const styles = StyleSheet.create({
 
   // Genre chips
   genreSection: { marginTop: 14 },
-  genreWrap:    { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  genreWrap:    { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   genreChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     backgroundColor: "#eff6ff",
     borderWidth: 1,
     borderColor: "#bfdbfe",
@@ -529,7 +548,7 @@ const styles = StyleSheet.create({
   badgeChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
     backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: "#e2e8f0",
@@ -537,7 +556,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  badgeChipEmoji: { fontSize: 14 },
   badgeChipText:  { fontSize: 12, fontWeight: "600", color: "#334155", textTransform: "capitalize" },
 
   // XP error
