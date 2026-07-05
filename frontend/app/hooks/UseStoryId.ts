@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import type { ArcSize, ArcStage, StoryStatus } from "../components/type";
 
@@ -36,8 +36,15 @@ export type VoteResult = {
   completed: boolean;
 };
 
+export type DeleteResult = {
+  success: boolean;
+  message: string;
+  storyId: string;
+};
+
 export default function useStoryId() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   const [story, setStory]   = useState<StoryDetail | null>(null);
@@ -48,6 +55,7 @@ export default function useStoryId() {
   const [completing, setCompleting]   = useState(false);
   const [voting, setVoting]           = useState(false);
   const [editing, setEditing]         = useState(false);
+  const [deleting, setDeleting]       = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMsg, setActionMsg]     = useState<string | null>(null);
 
@@ -190,6 +198,39 @@ export default function useStoryId() {
     }
   }
 
+  // ── delete story ──────────────────────────────────────────────────────────
+  async function deleteStoryFn(): Promise<boolean> {
+    if (!id) return false;
+    
+    setDeleting(true);
+    setActionError(null);
+    
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await axios.delete<DeleteResult>(
+        `${URL}stories/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setActionMsg(res.data.message);
+      
+      // Navigate back to feed after short delay
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+      
+      return true;
+    } catch (err: any) {
+      const errorMsg = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? "Could not delete story."
+        : "Could not delete story.";
+      setActionError(errorMsg);
+      return false;
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return {
     story,
     loading,
@@ -204,6 +245,9 @@ export default function useStoryId() {
     editStory,
     editing,
     getEditWindowStatus,
+
+    deleteStory: deleteStoryFn,
+    deleting,
 
     actionError,
     actionMsg,
