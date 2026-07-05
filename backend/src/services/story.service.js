@@ -438,3 +438,72 @@ export async function editStory(storyId, userId, data) {
     voteCount:    updated.votes.length,
   };
 }
+
+ 
+export async function deleteStory(storyId, userId) {
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    select: {
+      id:     true,
+      userId: true,
+      title:  true,
+    },
+  });
+ 
+  if (!story) throw new Error("Story not found");
+  
+  if (story.userId !== userId)
+    throw new Error("Only the creator can delete this story");
+ 
+  return prisma.$transaction(async (tx) => {
+    
+    // Delete reactions
+    await tx.turnReaction.deleteMany({
+      where: { turn: { storyId } },
+    });
+ 
+    // Delete turns
+    await tx.turn.deleteMany({
+      where: { storyId },
+    });
+ 
+    // Delete votes
+    await tx.storyVote.deleteMany({
+      where: { storyId },
+    });
+ 
+    // Delete comments
+    await tx.comment.deleteMany({
+      where: { storyId },
+    });
+ 
+    // Release character claims
+    await tx.character.updateMany({
+      where: { storyId },
+      data: { claimedByUserId: null },
+    });
+ 
+    // Delete characters
+    await tx.character.deleteMany({
+      where: { storyId },
+    });
+ 
+    // Delete the story
+    await tx.story.delete({
+      where: { id: storyId },
+    });
+ 
+    // Decrement user's story count
+    await tx.user.update({
+      where: { id: userId },
+      data: { storyCount: { decrement: 1 } },
+    });
+ 
+    return {
+      success: true,
+      message: `Story "${story.title}" has been deleted`,
+      storyId: storyId,
+    };
+  });
+}
+ 
