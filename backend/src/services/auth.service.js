@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import prisma from "../prisma/client.js";
+import { AppError } from "../errors/AppError.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -13,7 +14,7 @@ export async function registerUser ({ username, email, password }) {
     })
 
     if (emailExist) {
-        throw new Error("Email already used")
+        throw new AppError("Email already used", 409);
     }
 
     const usernameExist= await prisma.user.findFirst ({
@@ -24,7 +25,7 @@ export async function registerUser ({ username, email, password }) {
 
 
     if (usernameExist) {
-        throw new Error("Choose a different username, username already picked.")
+        throw new AppError("Choose a different username, username already picked.")
     }
    
 
@@ -59,17 +60,17 @@ export async function loginUser({email, username, password}) {
     })
 
     if (!user) {
-        throw new Error("Invalid credentials")
+        throw new AppError("Invalid credentials")
     }
 
     if (!user.passwordHash) {
-        throw new Error("This account uses Google sign-in. Please continue with Google.")
+        throw new AppError("This account uses Google sign-in. Please continue with Google.")
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
 
     if (!isMatch) {
-        throw new Error("Password mismatch")
+        throw new AppError("Password mismatch")
     }
 
     const token = jwt.sign(
@@ -103,13 +104,13 @@ export async function loginWithGoogleService({ idToken }) {
     const payload = ticket.getPayload();
 
     if (!payload || !payload.email) {
-        throw new Error("Invalid Google token");
+        throw new AppError("Invalid Google token");
     }
 
     const { sub: googleId, email, name, picture, email_verified } = payload;
 
     if (!email_verified) {
-        throw new Error("Google email not verified");
+        throw new AppError("Google email not verified");
     }
 
     // 1. Check if we already know this Google account
@@ -175,7 +176,7 @@ export async function updateProfile(userId, { bio, avatarUrl, genrePreferences }
 
     if (bio !== undefined) {
         if (bio !== null && bio.length > 280) {
-            throw new Error("Bio must be 280 characters or less");
+            throw new AppError("Bio must be 280 characters or less");
         }
         data.bio = bio;
     }
@@ -191,13 +192,13 @@ export async function updateProfile(userId, { bio, avatarUrl, genrePreferences }
         ];
         const invalid = genrePreferences.filter(g => !validGenres.includes(g));
         if (invalid.length > 0) {
-            throw new Error(`Invalid genre(s): ${invalid.join(", ")}`);
+            throw new AppError(`Invalid genre(s): ${invalid.join(", ")}`);
         }
         data.genrePreferences = genrePreferences;
     }
 
     if (Object.keys(data).length === 0) {
-        throw new Error("No valid fields provided to update");
+        throw new AppError("No valid fields provided to update");
     }
 
     const user = await prisma.user.update({
@@ -235,7 +236,7 @@ export async function getProfile(userId) {
     });
 
     if (!user) {
-        throw new Error("User not found");
+        throw new AppError("User not found");
     }
 
     return user;
