@@ -9,7 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.improvtrend",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to take photos.",
+        "NSPhotoLibraryUsageDescription": "This app uses the photo library to select photos.",
+        "NSPhotoLibraryAddUsageDescription": "This app uses the photo library to save photos.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to provide location-based features.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to provide location-based features even when the app is in the background."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,6 +27,29 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.yourcompany.improvtrend",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_MEDIA_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "INTERNET",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_ADVERTISE" 
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -47,6 +79,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "df2c4683-acea-4f47-a2ce-6f16a86508fe"
+      }
     }
   }
 }
