@@ -1,10 +1,11 @@
 import prisma from "../prisma/client.js";
+import { AppError } from "../errors/AppError.js";
 
 const VALID_REACTIONS = ["SPICY", "PLOT_TWIST", "FUNNY", "BEST_LINE"];
 
 export async function toggleReaction(turnId, userId, type) {
   if (!VALID_REACTIONS.includes(type)) {
-    throw new Error(`Invalid reaction type: ${type}`);
+    throw new AppError(`Invalid reaction type: ${type}`);
   }
 
   const existing = await prisma.turnReaction.findUnique({
