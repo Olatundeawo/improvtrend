@@ -1,4 +1,5 @@
 import { addTurn, getTurnsByStoryId, editTurn } from "../services/turn.service.js";
+import { AppError } from "../errors/AppError.js";
 
 export async function continueStory( req, res) {
     try {
@@ -7,7 +8,7 @@ export async function continueStory( req, res) {
         const userId = req.user.id;
         const maxCont = 150
         if ( content.length > maxCont) {
-            throw new Error("Allowed words is 150.")
+            throw new AppError("Allowed words is 150.")
         }
 
         const turn = await addTurn(storyId, userId, characterId, content);
@@ -44,7 +45,7 @@ export async function editTurnController (req, res) {
         const userId = req.user.id;
         const maxCont = 150
         if (content && content.length > maxCont) {
-            throw new Error("Allowed words is 150.")
+            throw new AppError("Allowed words is 150.")
         }
 
         const turn = await editTurn(turnId, userId, content);
