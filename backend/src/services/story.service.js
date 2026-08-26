@@ -4,6 +4,7 @@ import { resolveBadge } from "../utils/badge.js";
 import { BADGE_META } from "../utils/badgeMeta.js";
 import { getMaxTurns, deriveStage, VOTE_THRESHOLD } from "../utils/arc.js";
 import { assertLevel } from "./xp.service.js";
+import { AppError } from "../errors/AppError.js";
 
 
 function summariseReactions(reactions) {
@@ -30,17 +31,17 @@ export async function createStory(userId, data) {
   const parsedCharacters = parseCharacters(characters);
 
   if (parsedCharacters.length === 0)
-    throw new Error("At least one character is required");
+    throw new AppError("At least one character is required");
   if (parsedCharacters.length > 5)
-    throw new Error("Characters exceed 5");
+    throw new AppError("Characters exceed 5");
 
   const lower = parsedCharacters.map((c) => c.toLowerCase());
   if (new Set(lower).size !== parsedCharacters.length)
-    throw new Error("Duplicate character names are not allowed");
+    throw new AppError("Duplicate character names are not allowed");
 
   const validArcSizes = ["SHORT", "MEDIUM", "EPIC"];
   if (!validArcSizes.includes(arcSize))
-    throw new Error("arcSize must be SHORT, MEDIUM, or EPIC");
+    throw new AppError("arcSize must be SHORT, MEDIUM, or EPIC");
 
   const maxTurns = getMaxTurns(arcSize);
 
@@ -135,11 +136,11 @@ export async function voteToComplete(storyId, userId) {
       },
     });
 
-    if (!story) throw new Error("Story not found");
-    if (story.status === "COMPLETED") throw new Error("Story is already completed");
+    if (!story) throw new AppError("Story not found");
+    if (story.status === "COMPLETED") throw new AppError("Story is already completed");
 
     const alreadyVoted = story.votes.some((v) => v.userId === userId);
-    if (alreadyVoted) throw new Error("You have already voted to complete this story");
+    if (alreadyVoted) throw new AppError("You have already voted to complete this story");
 
     await tx.storyVote.create({ data: { storyId, userId } });
 
@@ -175,9 +176,9 @@ export async function completeStoryByCreator(storyId, userId) {
     select: { userId: true, status: true },
   });
 
-  if (!story) throw new Error("Story not found");
-  if (story.userId !== userId) throw new Error("Only the creator can end their story");
-  if (story.status === "COMPLETED") throw new Error("Story is already completed");
+  if (!story) throw new AppError("Story not found");
+  if (story.userId !== userId) throw new AppError("Only the creator can end their story");
+  if (story.status === "COMPLETED") throw new AppError("Story is already completed");
 
   return prisma.story.update({
     where: { id: storyId },
@@ -368,20 +369,20 @@ export async function editStory(storyId, userId, data) {
     },
   });
  
-  if (!story) throw new Error("Story not found");
+  if (!story) throw new AppError("Story not found");
   
   if (story.userId !== userId)
-    throw new Error("Only the creator can edit this story");
+    throw new AppError("Only the creator can edit this story");
  
   if (story.status === "COMPLETED")
-    throw new Error("Cannot edit a completed story");
+    throw new AppError("Cannot edit a completed story");
  
   const now = new Date();
   const elapsedMs = now.getTime() - story.createdAt.getTime();
  
   if (elapsedMs > EDIT_WINDOW_MS) {
     const minutesElapsed = Math.floor(elapsedMs / 1000 / 60);
-    throw new Error(`Edit window closed. Story was created ${minutesElapsed} minutes ago`);
+    throw new AppError(`Edit window closed. Story was created ${minutesElapsed} minutes ago`);
   }
  
   const updated = await prisma.story.update({
@@ -450,10 +451,10 @@ export async function deleteStory(storyId, userId) {
     },
   });
  
-  if (!story) throw new Error("Story not found");
+  if (!story) throw new AppError("Story not found");
   
   if (story.userId !== userId)
-    throw new Error("Only the creator can delete this story");
+    throw new AppError("Only the creator can delete this story");
  
   return prisma.$transaction(async (tx) => {
     
