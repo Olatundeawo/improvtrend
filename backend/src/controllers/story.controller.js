@@ -8,6 +8,7 @@ import {
   editStory,
   deleteStory
 } from "../services/story.service.js";
+import { AppError } from "../errors/AppError.js";
 
 export async function create(req, res) {
   try {
@@ -15,13 +16,13 @@ export async function create(req, res) {
     const { title, content, characters, arcSize = "SHORT" } = req.body;
 
     if (!title || title.trim().length === 0)
-      throw new Error("Title can't be empty");
+      throw new AppError("Title can't be empty");
     if (!content || content.trim().length === 0)
-      throw new Error("Content can't be empty");
+      throw new AppError("Content can't be empty");
     if (title.length > 50)
-      throw new Error("Title cannot be more than 50 characters");
+      throw new AppError("Title cannot be more than 50 characters");
     if (content.length > 150)
-      throw new Error("You've passed the number of characters allowed.");
+      throw new AppError("You've passed the number of characters allowed.");
 
     const story = await createStory(userId, { title, content, characters, arcSize });
     res.status(201).json(story);
