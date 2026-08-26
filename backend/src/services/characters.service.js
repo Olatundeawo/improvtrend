@@ -1,4 +1,5 @@
 import prisma from "../prisma/client.js";
+import { AppError } from "../errors/AppError.js";
 
 const MAX_CHARACTERS  = 6;
 const CLAIM_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -9,22 +10,22 @@ export async function addCharacter(storyId, name) {
     include: { _count: { select: { characters: true } } },
   });
 
-  if (!story) throw new Error("Story not found.");
+  if (!story) throw new AppError("Story not found.");
 
   if (story._count.characters >= MAX_CHARACTERS)
-    throw new Error(`A story cannot have more than ${MAX_CHARACTERS} characters.`);
+    throw new AppError(`A story cannot have more than ${MAX_CHARACTERS} characters.`);
 
   const existing = await prisma.character.findUnique({
     where: { name_storyId: { name, storyId } },
   });
-  if (existing) throw new Error(`A character named "${name}" already exists in this story.`);
+  if (existing) throw new AppError(`A character named "${name}" already exists in this story.`);
 
   return prisma.character.create({ data: { name, storyId } });
 }
 
 export async function claimCharacter(characterId, userId) {
   const character = await prisma.character.findUnique({ where: { id: characterId } });
-  if (!character) throw new Error("Character not found.");
+  if (!character) throw new AppError("Character not found.");
 
   const now = new Date();
 
@@ -32,11 +33,11 @@ export async function claimCharacter(characterId, userId) {
   if (character.claimedByUserId !== null && character.claimedByUserId !== userId) {
     const expired =
       !character.claimExpiresAt || character.claimExpiresAt <= now;
-    if (!expired) throw new Error("This character has already been claimed by another user.");
+    if (!expired) throw new AppError("This character has already been claimed by another user.");
   }
 
   if (character.claimedByUserId === userId) {
-    throw new Error("You have already claimed this character.");
+    throw new AppError("You have already claimed this character.");
   }
 
   return prisma.character.update({
@@ -52,8 +53,8 @@ export async function claimCharacter(characterId, userId) {
 
 export async function unclaimCharacter(characterId, userId) {
   const character = await prisma.character.findUnique({ where: { id: characterId } });
-  if (!character) throw new Error("Character not found.");
-  if (character.claimedByUserId !== userId) throw new Error("You do not own this character.");
+  if (!character) throw new AppError("Character not found.");
+  if (character.claimedByUserId !== userId) throw new AppError("You do not own this character.");
 
   return prisma.character.update({
     where: { id: characterId },
