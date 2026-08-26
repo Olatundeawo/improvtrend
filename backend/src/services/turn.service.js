@@ -1,6 +1,7 @@
 import prisma from "../prisma/client.js";
 import { advanceArc } from "./story.service.js";
 import { awardXp, updateStreak, awardStoryCompletionXp } from "./xp.service.js";
+import { AppError } from "../errors/AppError.js";
 
 const CLAIM_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours
 const EDIT_WINDOW_MS  = 10 * 60 * 1000;      // 10 minutes
@@ -31,16 +32,16 @@ export async function addTurn(storyId, userId, characterId, content) {
   return prisma.$transaction(
     async (tx) => {
       const story = await tx.story.findUnique({ where: { id: storyId } });
-      if (!story)                          throw new Error("Story not found.");
-      if (story.isLocked)                  throw new Error("Story is locked.");
-      if (story.status === "COMPLETED")    throw new Error("Story already completed.");
+      if (!story)                          throw new AppError("Story not found.");
+      if (story.isLocked)                  throw new AppError("Story is locked.");
+      if (story.status === "COMPLETED")    throw new AppError("Story already completed.");
 
       const character = await tx.character.findUnique({ where: { id: characterId } });
       if (!character || character.storyId !== storyId)
-        throw new Error("Character does not belong to this story.");
+        throw new AppError("Character does not belong to this story.");
 
       if (character.claimedByUserId !== null && character.claimedByUserId !== userId)
-        throw new Error("This character has been claimed by another user.");
+        throw new AppError("This character has been claimed by another user.");
 
       // ── Guard: catch claims the scheduler hasn't cleaned up yet ────────────
       if (
@@ -48,7 +49,7 @@ export async function addTurn(storyId, userId, characterId, content) {
         character.claimExpiresAt  &&
         character.claimExpiresAt <= new Date()
       ) {
-        throw new Error(
+        throw new AppError(
           "Your 48-hour claim on this character has expired. Re-claim it to continue writing."
         );
       }
@@ -59,7 +60,7 @@ export async function addTurn(storyId, userId, characterId, content) {
         select:  { characterId: true },
       });
       if (lastTurn?.characterId === characterId)
-        throw new Error("You cannot use the same character twice in a row.");
+        throw new AppError("You cannot use the same character twice in a row.");
 
       const { turnCount: newTurnCount } = await tx.story.update({
         where:  { id: storyId },
@@ -131,7 +132,7 @@ export async function addTurn(storyId, userId, characterId, content) {
 
 export async function editTurn(turnId, userId, content) {
   if (!content || !content.trim()) {
-    throw new Error("Content cannot be empty.");
+    throw new AppError("Content cannot be empty.");
   }
 
   return prisma.$transaction(async (tx) => {
@@ -140,15 +141,15 @@ export async function editTurn(turnId, userId, content) {
       include: { story: { select: { isLocked: true, status: true } } },
     });
 
-    if (!turn)                       throw new Error("Turn not found.");
-    if (turn.userId !== userId)      throw new Error("You can only edit your own turns.");
-    if (turn.story.isLocked)         throw new Error("Story is locked.");
+    if (!turn)                       throw new AppError("Turn not found.");
+    if (turn.userId !== userId)      throw new AppError("You can only edit your own turns.");
+    if (turn.story.isLocked)         throw new AppError("Story is locked.");
     if (turn.story.status === "COMPLETED")
-      throw new Error("Cannot edit turns in a completed story.");
+      throw new AppError("Cannot edit turns in a completed story.");
 
     const elapsedMs = Date.now() - new Date(turn.createdAt).getTime();
     if (elapsedMs > EDIT_WINDOW_MS) {
-      throw new Error(
+      throw new AppError(
         "Edit window has expired. Turns can only be edited within 10 minutes of posting."
       );
     }
