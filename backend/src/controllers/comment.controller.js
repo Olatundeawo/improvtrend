@@ -1,4 +1,5 @@
 import { addComment } from "../services/comment.service.js";
+import { AppError } from "../errors/AppError.js";
 
 export async function comment(req, res) {
   try {
@@ -9,11 +10,11 @@ export async function comment(req, res) {
     const MAX_CHAR = 100;
 
     if (!content || content.trim().length === 0) {
-      throw new Error("Comment cannot be empty");
+      throw new AppError("Comment cannot be empty");
     }
 
     if (content.length > MAX_CHAR) {
-      throw new Error("Maximum comment length is 100 characters");
+      throw new AppError("Maximum comment length is 100 characters");
     }
 
     const comment = await addComment(
