@@ -93,7 +93,7 @@ export async function loginUser({email, username, password}) {
     }
 }
 
-export async function loginWithGoogle({ idToken }) {
+export async function loginWithGoogleService({ idToken }) {
     // Verify the token actually came from Google and wasn't tampered with
     const ticket = await googleClient.verifyIdToken({
         idToken,
