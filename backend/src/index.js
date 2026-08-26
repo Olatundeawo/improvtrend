@@ -11,6 +11,7 @@ import reactionRoutes from "./routes/reaction.routes.js";
 import xpRoutes from "./routes/xp.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import { startScheduler } from "./services/scheduler.service.js";
+import { AppError } from "./errors/AppError.js";
 
 dotenv.config();
 
@@ -49,17 +50,25 @@ app.get("/api/health", (_req, res) => {
 
 
 app.use((req, res) => {
-    res.status(404).json({
-        error: "Route not found, enter a valid route"
-    })
+  res.status(404).json({
+    error: "Route not found, enter a valid route",
+    code: "ROUTE_NOT_FOUND",
+  });
 })
 
 app.use((err, req, res, next) => {
-    console.error(err)
+  if (res.headersSent) {
+    return next(err);
+  }
 
-    res.status(err.status || 500).json({
-        error: err.message || "internal error"
-    })
+  const isAppError = err instanceof AppError || err?.isAppError;
+  const statusCode = isAppError ? err.statusCode : 500;
+  const message = isAppError ? err.message : "Internal server error";
+  const code = isAppError ? err.code : "INTERNAL_SERVER_ERROR";
+
+  console.error(err);
+
+  res.status(statusCode).json({ error: message, code });
 })
 
 const PORT = process.env.PORT || 3000;
