@@ -1,5 +1,6 @@
-import { registerUser, loginUser, updateProfile, getProfile } from "../services/auth.service.js";
+import { registerUser, loginUser, updateProfile, getProfile, loginWithGoogleService } from "../services/auth.service.js";
 import { uploadAvatar } from "../services/upload.service.js";
+
 
 
 export async function register(req, res) {
@@ -100,4 +101,30 @@ export async function updateProfileHandler(req, res) {
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
+}
+
+export async function loginWithGoogle(req, res) {
+  try {
+    if (!req.body) {
+      return res.status(400).json({
+        error: "Request body is missing or invalid JSON"
+      });
+    }
+
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        error: "idToken is required"
+      });
+    }
+
+    const result = await loginWithGoogleService(idToken);
+    res.json(result);
+  } catch (err) {
+    if (err.message === "Invalid Google token" || err.message === "Google email not verified") {
+      return res.status(401).json({ error: err.message });
+    }
+    res.status(400).json({ error: err.message });
+  }
 }
