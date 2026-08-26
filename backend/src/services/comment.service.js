@@ -1,8 +1,9 @@
 import prisma from "../prisma/client.js";
+import { AppError } from "../errors/AppError.js";
 
 export async function addComment(storyId, userId, { content }) {
   if (!content || content.trim().length === 0) {
-    throw new Error("Comment cannot be empty");
+    throw new AppError("Comment cannot be empty");
   }
 
   const story = await prisma.story.findUnique({
@@ -10,7 +11,7 @@ export async function addComment(storyId, userId, { content }) {
   });
 
   if (!story) {
-    throw new Error("Story not found");
+    throw new AppError("Story not found");
   }
 
   return prisma.comment.create({
