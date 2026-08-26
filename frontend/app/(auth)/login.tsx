@@ -1,5 +1,3 @@
-"use client"
-
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import axios from "axios"
 import { Link, useRouter } from "expo-router"
@@ -16,6 +14,8 @@ import {
   View,
 } from "react-native"
 import { useAuth } from "../context/auth"
+// TODO: Uncomment this when building the native APK with Google OAuth enabled.
+// import { useGoogleSignIn } from "../hooks/useGoogleSignIn-corrected"
 
 const { width, height } = Dimensions.get("window")
 const isSmallScreen = width < 375
@@ -33,6 +33,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const router = useRouter()
   const URL = process.env.EXPO_PUBLIC_BASE_URL
+
+  // TODO: Uncomment this when building the APK/native app with Google OAuth enabled.
+  // const { signIn: googleSignIn, isLoading: googleLoading, error: googleError, clearError: clearGoogleError } = useGoogleSignIn({
+  //   androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID || "",
+  //   iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || "",
+  //   webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID || "",
+  //   apiUrl: process.env.EXPO_PUBLIC_BASE_URL || "",
+  // })
 
   type Form = {
     identifier: string
@@ -84,7 +92,7 @@ export default function Login() {
 
       if (response.data?.token) {
         await AsyncStorage.setItem("token", response.data.token)
-        await AsyncStorage.setItem("userId", response.data.user.id);
+        await AsyncStorage.setItem("userId", response.data.user.id)
       }
 
       setForm({ identifier: "", password: "" })
@@ -100,6 +108,40 @@ export default function Login() {
     }
   }
 
+  // TODO: Uncomment this when building the APK/native app with Google OAuth enabled.
+  // const handleGoogleSignIn = async () => {
+  //   setError(null)
+  //   setMessage(null)
+
+  //   const result = await googleSignIn()
+
+  //   if (!result.success) {
+  //     setError(result.error || "Google sign-in failed")
+  //     return
+  //   }
+
+  //   try {
+  //     setMessage("Signing in with Google...")
+
+  //     await login({
+  //       id: result.user!.id,
+  //       username: result.user!.username || result.user!.email,
+  //       token: result.token!,
+  //       email: result.user!.email,
+  //       createdAt: result.user!.createdAt,
+  //     })
+
+  //     if (result.token) {
+  //       await AsyncStorage.setItem("token", result.token)
+  //       await AsyncStorage.setItem("userId", result.user!.id)
+  //     }
+
+  //     router.replace("/")
+  //   } catch (err: any) {
+  //     setError(err.message || "Failed to complete sign-in")
+  //   }
+  // }
+
   useEffect(() => {
     if (!error && !message) return
 
@@ -110,6 +152,14 @@ export default function Login() {
 
     return () => clearTimeout(clear)
   }, [error, message])
+
+  // TODO: Uncomment this when building the APK/native app with Google OAuth enabled.
+  // useEffect(() => {
+  //   if (googleError) {
+  //     setError(googleError)
+  //     clearGoogleError()
+  //   }
+  // }, [googleError])
 
   return (
     <KeyboardAvoidingView
@@ -140,6 +190,30 @@ export default function Login() {
               <Text style={styles.successText}>{message}</Text>
             </View>
           )}
+
+          {/* TODO: Uncomment this Google sign-in button when building the APK/native app with Google OAuth enabled. */}
+          {/*
+          <TouchableOpacity
+            onPress={handleGoogleSignIn}
+            activeOpacity={0.85}
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#1F2937" />
+            ) : (
+              <>
+                <Text style={styles.googleButtonText}>🔍 Sign in with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          */}
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.divider} />
+          </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>Email or Username</Text>
@@ -267,6 +341,45 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
     marginBottom: 20,
+  },
+
+  googleButton: {
+    marginTop: 16,
+    backgroundColor: "#F3F4F6",
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  googleButtonText: {
+    color: "#1F2937",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    gap: 12,
+  },
+
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E5E7EB",
+  },
+
+  dividerText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    fontWeight: "500",
   },
 
   field: {
